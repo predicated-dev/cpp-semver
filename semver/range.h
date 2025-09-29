@@ -38,6 +38,15 @@ namespace semver
 
 		void setToMin();
 		void setToMax();
+
+		Bound() { version.flags = Version::MANAGED;	}
+
+		Bound(const Version& version, Included include, MatchPreReleases matchPreReleases)
+			: version{ version }, included{ included }, matchPreReleases{ matchPreReleases }
+		{
+			this->version.flags |= Version::MANAGED;
+		}
+
 	};
 
 	enum class ComparatorPrefix : uint8_t
@@ -96,6 +105,20 @@ namespace semver
 		bool hasWithinBounds(const Version& version) const;
 		bool matches(const Version& version) const;
 		std::string toString() const;
+
+
+		Range()
+			: lower{ Version{0, 0, 0, Version::MANAGED, '0' }, 
+				Bound::Included::YES, Bound::MatchPreReleases::NO },
+
+			  upper{ Version{SEMVER_MAX_NUMERIC_IDENTIFIER, SEMVER_MAX_NUMERIC_IDENTIFIER, SEMVER_MAX_NUMERIC_IDENTIFIER, Version::MANAGED },
+				Bound::Included::YES, Bound::MatchPreReleases::NO }
+		{}
+
+		Range(const Bound& lower, const Bound& upper) 
+			: lower{ lower }, upper{ upper } 
+		{}
+
 
 	};
 

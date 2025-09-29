@@ -4,8 +4,8 @@
 namespace semver
 {
 
-    static const Bound sMinBound = Bound{ Version{0, 0, 0, 0, '0' }, Bound::Included::YES, Bound::MatchPreReleases::NO };
-    static const Bound sMaxBound = Bound{ Version{SEMVER_MAX_NUMERIC_IDENTIFIER, SEMVER_MAX_NUMERIC_IDENTIFIER, SEMVER_MAX_NUMERIC_IDENTIFIER}, 
+    static const Bound sMinBound = Bound{ Version{0, 0, 0, Version::MANAGED, '0' }, Bound::Included::YES, Bound::MatchPreReleases::NO };
+    static const Bound sMaxBound = Bound{ Version{SEMVER_MAX_NUMERIC_IDENTIFIER, SEMVER_MAX_NUMERIC_IDENTIFIER, SEMVER_MAX_NUMERIC_IDENTIFIER, Version::MANAGED},
          Bound::Included::YES, Bound::MatchPreReleases::NO };
 
     static const Range sAllRange = Range{ sMinBound, sMaxBound };
@@ -233,7 +233,7 @@ namespace semver
 
         if (rangeSet.size() == 0)
         {
-            return Range().toString();
+           return "<0.0.0-0";
         }
         else
         {
@@ -306,6 +306,7 @@ namespace semver
     {
         lower.version.clear();
         upper.version.clear();
+        lower.version.flags = upper.version.flags = Version::Flags::MANAGED; // clear also cleared the managed flag
         upper.included = lower.included = Bound::Included::NO;
 
     }
@@ -315,10 +316,8 @@ namespace semver
         lower.version.major = lower.version.minor = lower.version.patch = 0;
         lower.version.setPrerelease(SEMVER_LOWEST_PRERELEASE, 1);
 
-
         upper.version.major = upper.version.minor = upper.version.patch = SEMVER_MAX_NUMERIC_IDENTIFIER;
         upper.version.deletePrerelease();
-
 
         upper.included = lower.included = Bound::Included::YES;
 
