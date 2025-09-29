@@ -304,23 +304,22 @@ namespace semver
 
     void Range::setToNone()
     {
-        lower.version.clear();
-        upper.version.clear();
-        lower.version.flags = upper.version.flags = Version::Flags::MANAGED; // clear also cleared the managed flag
+        lower.juncture.clear();
+        upper.juncture.clear();
+        lower.juncture.flags = upper.juncture.flags = Version::Flags::MANAGED; // clear also cleared the managed flag
         upper.included = lower.included = Bound::Included::NO;
 
     }
 
     void Range::setToAll()
     {
-        lower.version.major = lower.version.minor = lower.version.patch = 0;
-        lower.version.setPrerelease(SEMVER_LOWEST_PRERELEASE, 1);
+        lower.juncture.major = lower.juncture.minor = lower.juncture.patch = 0;
+        lower.juncture.setPrerelease(SEMVER_LOWEST_PRERELEASE, 1);
 
-        upper.version.major = upper.version.minor = upper.version.patch = SEMVER_MAX_NUMERIC_IDENTIFIER;
-        upper.version.deletePrerelease();
+        upper.juncture.major = upper.juncture.minor = upper.juncture.patch = SEMVER_MAX_NUMERIC_IDENTIFIER;
+        upper.juncture.deletePrerelease();
 
         upper.included = lower.included = Bound::Included::YES;
-
     }
 
 
@@ -337,17 +336,17 @@ namespace semver
 
         if (result == SEMVER_PARSE_MINOR_WILDCARD /*|| result == SEMVER_PARSE_MINOR_EMPTY*/)
         {
-            upper.version.major = lower.version.major + 1;
-            upper.version.minor = 0;
+            upper.juncture.major = lower.juncture.major + 1;
+            upper.juncture.minor = 0;
         }
         else
         {
-            upper.version.major = lower.version.major;
-            upper.version.minor = lower.version.minor + 1;
+            upper.juncture.major = lower.juncture.major;
+            upper.juncture.minor = lower.juncture.minor + 1;
         }
 
-        upper.version.patch = 0;
-        upper.version.setPrerelease(SEMVER_LOWEST_PRERELEASE, 1);
+        upper.juncture.patch = 0;
+        upper.juncture.setPrerelease(SEMVER_LOWEST_PRERELEASE, 1);
         upper.matchPreReleases = Bound::MatchPreReleases::NO;
         upper.included = Bound::Included::NO;
 
@@ -366,25 +365,25 @@ namespace semver
             return result;
         }
      
-        if (result == SEMVER_PARSE_MINOR_WILDCARD || lower.version.major > 0)
+        if (result == SEMVER_PARSE_MINOR_WILDCARD || lower.juncture.major > 0)
         {
-            upper.version.major = lower.version.major + 1;
-            upper.version.minor = upper.version.patch = 0;
+            upper.juncture.major = lower.juncture.major + 1;
+            upper.juncture.minor = upper.juncture.patch = 0;
         }
-        else if (result == SEMVER_PARSE_PATCH_WILDCARD || lower.version.minor > 0)
+        else if (result == SEMVER_PARSE_PATCH_WILDCARD || lower.juncture.minor > 0)
         {
-            upper.version.major = lower.version.major;
-            upper.version.minor = lower.version.minor + 1;
-            upper.version.patch = 0;
+            upper.juncture.major = lower.juncture.major;
+            upper.juncture.minor = lower.juncture.minor + 1;
+            upper.juncture.patch = 0;
         }
         else
         {
-            upper.version.major = lower.version.major;
-            upper.version.minor = lower.version.minor;
-            upper.version.patch = lower.version.patch + 1;
+            upper.juncture.major = lower.juncture.major;
+            upper.juncture.minor = lower.juncture.minor;
+            upper.juncture.patch = lower.juncture.patch + 1;
         }
 
-        upper.version.setPrerelease(SEMVER_LOWEST_PRERELEASE, 1);
+        upper.juncture.setPrerelease(SEMVER_LOWEST_PRERELEASE, 1);
         upper.matchPreReleases = Bound::MatchPreReleases::NO;
         upper.included = Bound::Included::NO;
 
@@ -395,7 +394,7 @@ namespace semver
     SemverParseResult Range::addMinimumAllowWildcards(std::string_view version_str, Bound::Included included)
     {
 
-        SemverParseResult result = lower.version.parseIgnoreBuild(version_str.data(), version_str.size(), Version::UninitializedDefault::WILD);
+        SemverParseResult result = lower.juncture.parseIgnoreBuild(version_str.data(), version_str.size(), Version::UninitializedDefault::WILD);
         
 
         if (!rangeVersionParseResultOK(result))
@@ -405,7 +404,7 @@ namespace semver
         }
 
         
-        if (lower.version.majorIsWild())
+        if (lower.juncture.majorIsWild())
         {
             if (included == Bound::Included::YES)
                 setToAll(); // >= * implies all
@@ -418,31 +417,31 @@ namespace semver
         bool minorWild = false;
         bool patchWild = false;
 
-        if ((minorWild = lower.version.minorIsWild() || lower.version.minorIsUndefined()) || 
-            (patchWild = lower.version.patchIsWild() || lower.version.patchIsUndefined()))
+        if ((minorWild = lower.juncture.minorIsWild() || lower.juncture.minorIsUndefined()) || 
+            (patchWild = lower.juncture.patchIsWild() || lower.juncture.patchIsUndefined()))
         {
 
             if (minorWild)
             {
                 result = SEMVER_PARSE_MINOR_WILDCARD;
-                lower.version.minor = 0;
+                lower.juncture.minor = 0;
                 if (included == Bound::Included::NO)  // > 2.x  :=  >= 3.0.0-0
-                     ++lower.version.major;
+                     ++lower.juncture.major;
                    
             }
             else // patch is wild
             {
                 result = SEMVER_PARSE_PATCH_WILDCARD;
                 if (included == Bound::Included::NO)  // > 2.3.x  :=  >= 2.4.0-0
-                    ++lower.version.minor;
+                    ++lower.juncture.minor;
             }
 
-            lower.version.patch = 0;
+            lower.juncture.patch = 0;
 
             if (included == Bound::Included::NO)
-                upper.version.setPrerelease(SEMVER_LOWEST_PRERELEASE, 1);
+                upper.juncture.setPrerelease(SEMVER_LOWEST_PRERELEASE, 1);
             else
-                lower.version.deletePrerelease(); // >= 2.3.x  := >=2.3.0
+                lower.juncture.deletePrerelease(); // >= 2.3.x  := >=2.3.0
 
             lower.matchPreReleases = Bound::MatchPreReleases::NO;
             lower.included = Bound::Included::YES; // see examples above
@@ -451,7 +450,7 @@ namespace semver
         else
         {
            lower.included = included;
-           lower.matchPreReleases = lower.version.isPrerelease() ? Bound::MatchPreReleases::YES : Bound::MatchPreReleases::NO;
+           lower.matchPreReleases = lower.juncture.isPrerelease() ? Bound::MatchPreReleases::YES : Bound::MatchPreReleases::NO;
         }
 
         return result;
@@ -461,7 +460,7 @@ namespace semver
     SemverParseResult Range::addMaximumAllowWildcards(std::string_view version_str, Bound::Included included)
     {
 
-        SemverParseResult result = upper.version.parseIgnoreBuild(version_str.data(), version_str.size());
+        SemverParseResult result = upper.juncture.parseIgnoreBuild(version_str.data(), version_str.size());
 
 
         if (!rangeVersionParseResultOK(result))
@@ -471,7 +470,7 @@ namespace semver
         }
 
 
-        if (upper.version.majorIsWild())
+        if (upper.juncture.majorIsWild())
         {
             if (included == Bound::Included::YES)
                 setToAll(); // <= * implies all
@@ -484,8 +483,8 @@ namespace semver
         bool minorWild = false;
         bool patchWild = false; 
 
-        if ((minorWild = upper.version.minorIsWild() || upper.version.minorIsUndefined()) ||
-            (patchWild = upper.version.patchIsWild() || upper.version.patchIsUndefined()))
+        if ((minorWild = upper.juncture.minorIsWild() || upper.juncture.minorIsUndefined()) ||
+            (patchWild = upper.juncture.patchIsWild() || upper.juncture.patchIsUndefined()))
         {
 
             if (minorWild) // < 2.x or <= 2.x
@@ -493,9 +492,9 @@ namespace semver
                 result = SEMVER_PARSE_MINOR_WILDCARD;
 
                 if (included == Bound::Included::YES) // <= 2.x := <3.0.0-0 
-                    ++upper.version.major;
+                    ++upper.juncture.major;
 
-                upper.version.minor = 0;
+                upper.juncture.minor = 0;
 
             }
             else // patch is wild
@@ -503,15 +502,15 @@ namespace semver
                 result = SEMVER_PARSE_PATCH_WILDCARD;
 
                 if (included == Bound::Included::YES) // <= 2.3.x := < 2.4.0-0
-                    ++upper.version.minor;
+                    ++upper.juncture.minor;
             }
             
-            upper.version.patch = 0;
+            upper.juncture.patch = 0;
 
             if (included == Bound::Included::YES)
-                upper.version.setPrerelease(SEMVER_LOWEST_PRERELEASE, 1);
+                upper.juncture.setPrerelease(SEMVER_LOWEST_PRERELEASE, 1);
             else
-                upper.version.deletePrerelease(); // < 2.3.x := < 2.3.0
+                upper.juncture.deletePrerelease(); // < 2.3.x := < 2.3.0
 
 
             upper.included = Bound::Included::NO;
@@ -520,7 +519,7 @@ namespace semver
         else
         {
             upper.included = included;
-            upper.matchPreReleases = upper.version.isPrerelease() ? Bound::MatchPreReleases::YES : Bound::MatchPreReleases::NO;
+            upper.matchPreReleases = upper.juncture.isPrerelease() ? Bound::MatchPreReleases::YES : Bound::MatchPreReleases::NO;
         }
 
         return result;
@@ -550,28 +549,28 @@ namespace semver
             if (result == SEMVER_PARSE_MINOR_WILDCARD) // = 2.x
             {
                 result = SEMVER_PARSE_MINOR_WILDCARD;
-                upper.version.major = lower.version.major + 1; // 2.x := >= 2.0.0 <3.0.0-0
-                upper.version.minor = 0;
+                upper.juncture.major = lower.juncture.major + 1; // 2.x := >= 2.0.0 <3.0.0-0
+                upper.juncture.minor = 0;
 
             }
             else // patch is wild
             {
                 result = SEMVER_PARSE_PATCH_WILDCARD;
-                upper.version.major = lower.version.major;
-                upper.version.minor = lower.version.minor +1;  //2.3.x := >= 2.3.0 < 2.4.0-0
+                upper.juncture.major = lower.juncture.major;
+                upper.juncture.minor = lower.juncture.minor +1;  //2.3.x := >= 2.3.0 < 2.4.0-0
             }
 
-            upper.version.patch = 0;
-            upper.version.setPrerelease(SEMVER_LOWEST_PRERELEASE, 1);
+            upper.juncture.patch = 0;
+            upper.juncture.setPrerelease(SEMVER_LOWEST_PRERELEASE, 1);
             upper.included = Bound::Included::NO;
             upper.matchPreReleases = Bound::MatchPreReleases::NO;
         }
         else
         {
-            upper.version.major = lower.version.major;
-            upper.version.minor = lower.version.minor;
-            upper.version.patch = lower.version.patch;
-            upper.version.setPrerelease(lower.version.getPrerelease());
+            upper.juncture.major = lower.juncture.major;
+            upper.juncture.minor = lower.juncture.minor;
+            upper.juncture.patch = lower.juncture.patch;
+            upper.juncture.setPrerelease(lower.juncture.getPrerelease());
             upper.included = lower.included;
             upper.matchPreReleases = upper.matchPreReleases;
         }
@@ -590,18 +589,18 @@ namespace semver
     }
 
 
-    bool Range::matches(const Version& version) const
+    bool Range::matches(const Version& juncture) const
     {
-        if (hasWithinBounds(version)) 
+        if (hasWithinBounds(juncture)) 
         {
-            if (!version.isPrerelease())
+            if (!juncture.isPrerelease())
                 return true;
             else
             {
                 return // prereleases need to meet extra conditions
-                    lower.canMatchPreReleases() && lower.version.sameCore(version) && lower.version.isPrerelease() ||
-                    upper.canMatchPreReleases() && upper.version.sameCore(version) && upper.version.isPrerelease() ||
-                    !minPreRelease.empty() && Version::comparePrereleases(minPreRelease.c_str(), version.getPrerelease()) <= 0;
+                    lower.canMatchPreReleases() && lower.juncture.sameCore(juncture) && lower.juncture.isPrerelease() ||
+                    upper.canMatchPreReleases() && upper.juncture.sameCore(juncture) && upper.juncture.isPrerelease() ||
+                    !minPreRelease.empty() && Version::comparePrereleases(minPreRelease.c_str(), juncture.getPrerelease()) <= 0;
             }
         }
 
@@ -609,16 +608,16 @@ namespace semver
 
     }
 
-    bool Range::hasWithinBounds(const Version& version) const
+    bool Range::hasWithinBounds(const Version& juncture) const
     {
-        if (!version.isDefined())
+        if (!juncture.isDefined())
             return false;
 
-        int compareLower = Version::compare(version, lower.version);
+        int compareLower = Version::compare(juncture, lower.juncture);
         if (compareLower < 0) 
             return false;
 
-        int compareUpper = Version::compare(version, upper.version);
+        int compareUpper = Version::compare(juncture, upper.juncture);
         if (compareUpper > 0) 
             return false;
 
@@ -644,11 +643,11 @@ namespace semver
         if (isAll())
            return "x" + minPreReleaseTag;
 
-        if (upper.version.isMaximum())
-            return (lower.isIncluded() ? ">=" : ">") + std::string(lower.version.toString());
+        if (upper.juncture.isMaximum())
+            return (lower.isIncluded() ? ">=" : ">") + std::string(lower.juncture.toString());
 
-        if (lower.version.isMinimum())
-            return (upper.isIncluded() ? "<=" : "<") + std::string(upper.version.toString());
+        if (lower.juncture.isMinimum())
+            return (upper.isIncluded() ? "<=" : "<") + std::string(upper.juncture.toString());
 
 
         if (lower.isIncluded())
@@ -656,29 +655,29 @@ namespace semver
             if (upper.isIncluded())
             {
                 if (upper == lower)
-                    return lower.version.toString();
+                    return lower.juncture.toString();
 
-                return lower.version.toString() + " - " + upper.version.toString();
+                return lower.juncture.toString() + " - " + upper.juncture.toString();
             }
 
-            return ">=" + lower.version.toString() + " <" + upper.version.toString();
+            return ">=" + lower.juncture.toString() + " <" + upper.juncture.toString();
         }
 
-        return '>' + lower.version.toString() + (upper.isIncluded() ? " <=" : " <") + upper.version.toString() + minPreReleaseTag;
+        return '>' + lower.juncture.toString() + (upper.isIncluded() ? " <=" : " <") + upper.juncture.toString() + minPreReleaseTag;
     }
 
 
     void Bound::setToMin()
     {
-        version.major = version.minor = version.patch = 0;
-        version.setPrerelease(SEMVER_LOWEST_PRERELEASE, 1);
+        juncture.major = juncture.minor = juncture.patch = 0;
+        juncture.setPrerelease(SEMVER_LOWEST_PRERELEASE, 1);
         included = Bound::Included::YES;
     }
 
     void Bound::setToMax()
     {
-        version.major = version.minor = version.patch = SEMVER_MAX_NUMERIC_IDENTIFIER;
-        version.deletePrerelease();
+        juncture.major = juncture.minor = juncture.patch = SEMVER_MAX_NUMERIC_IDENTIFIER;
+        juncture.deletePrerelease();
         included = Bound::Included::YES;
     }
 

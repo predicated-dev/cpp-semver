@@ -9,7 +9,7 @@ namespace semver
 	struct Bound
 	{
 
-		Version version;
+		Version juncture;
 		
 		enum class Included : uint8_t
 		{
@@ -33,18 +33,18 @@ namespace semver
 
 		inline bool operator==(const Bound& other) const
 		{
-			return (version == other.version) && (included == other.included);
+			return (juncture == other.juncture) && (included == other.included);
 		};
 
 		void setToMin();
 		void setToMax();
 
-		Bound() { version.flags = Version::MANAGED;	}
+		Bound() { juncture.flags = Version::MANAGED;	}
 
-		Bound(const Version& version, Included include, MatchPreReleases matchPreReleases)
-			: version{ version }, included{ included }, matchPreReleases{ matchPreReleases }
+		Bound(const Version& juncture, Included included, MatchPreReleases matchPreReleases)
+			: juncture{ juncture }, included{ included }, matchPreReleases{ matchPreReleases }
 		{
-			this->version.flags |= Version::MANAGED;
+			this->juncture.flags |= Version::MANAGED;
 		}
 
 	};
@@ -70,7 +70,7 @@ namespace semver
 		inline bool isNone() const
 		{
 		
-			int boundComparison = Version::compare(lower.version, upper.version);
+			int boundComparison = Version::compare(lower.juncture, upper.juncture);
 
 			return (boundComparison < 0) ||	(boundComparison == 0 ) &&
 				(lower.included == Bound::Included::YES || upper.included == Bound::Included::YES); 	// if the versions match but either or both are excluded, we have nothing left
@@ -79,7 +79,7 @@ namespace semver
 	
 		bool isAll() const
 		{
-			return upper.version.isMaximum() && lower.version.isMinimum();
+			return upper.juncture.isMaximum() && lower.juncture.isMinimum();
 		}
 
 		SemverParseResult add(ComparatorPrefix prefix, std::string_view version_str);
