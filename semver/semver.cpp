@@ -252,7 +252,7 @@ SEMVER_API void semver_version_dispose(HSemverVersion version) // Free the alloc
 	semver::Version* v = reinterpret_cast<semver::Version*>(version);
 	
 	if (v->flags & semver::Version::Flags::MANAGED)
-		return;  // block will take care of it (maybe we can just do deleteHeapResources, but definitely not delete)
+		return;  // block or range boundary will take care of it (maybe we can just do deleteHeapResources, but definitely not delete)
 
 	v->deleteHeapResources();
 	delete v;
@@ -319,8 +319,8 @@ SEMVER_API void semver_query_dispose(HSemverQuery query)
 	semver::Query* q = reinterpret_cast<semver::Query*>(query);
 	for (semver::Range& r : q->rangeSet) 
 	{
-		r.lower.version.deletePrerelease();
-		r.upper.version.deletePrerelease(); // range junctures don't have builds EVER
+		r.lower.juncture.deleteHeapResources();
+		r.upper.juncture.deleteHeapResources(); // while not technically allowed it is possible to add Build meta data so I don't just delete Prerelease heap resources
 	}
 	delete q;
 }
@@ -426,7 +426,7 @@ SEMVER_API BOOL semver_bound_get_is_inclusive(const HSemverBound bound)
 SEMVER_API HSemverVersion semver_bound_get_juncture(const HSemverBound bound)
 {
 	semver::Bound* b = reinterpret_cast<semver::Bound*>(bound);
-	return reinterpret_cast<HSemverVersion>(&b->version);
+	return reinterpret_cast<HSemverVersion>(&b->juncture);
 }
 
 
@@ -538,6 +538,10 @@ SEMVER_API HSemverRange semver_query_add_range(HSemverQuery query)
 SEMVER_API void semver_query_erase_range_at_index(HSemverQuery query, size_t index) //also disposes the range
 {
 	semver::Query* q = reinterpret_cast<semver::Query*>(query);
+
+	q->rangeSet[index].lower.juncture.deleteHeapResources(); // some fools might add build meta data so I can't just delete prerelease info
+	q->rangeSet[index].upper.juncture.deleteHeapResources(); 
+
 	q->rangeSet.erase(q->rangeSet.begin() + index);
 }
 
@@ -576,10 +580,11 @@ SEMVER_API void semver_bound_set_juncture(HSemverBound bound, HSemverVersion jun
 	semver::Bound* b = reinterpret_cast<semver::Bound*>(bound);
 	semver::Version* v = reinterpret_cast<semver::Version*>(juncture);
 
-	b->version.major = v->major;
-	b->version.minor = v->minor;
-	b->version.patch = v->patch;
-	b->version.setPrerelease(v->getPrerelease()); // juncture don't hve build info
+	b->juncture.major = v->major;
+	b->juncture.minor = v->minor;
+	b->juncture.patch = v->patch;
+	b->juncture.setPrerelease(v->getPrerelease()); // juncture should not have build info, but if they do I don't want to copy that
+
 }
 
 SEMVER_API void semver_bound_set_to_min(HSemverBound bound)
@@ -592,9 +597,30 @@ SEMVER_API void semver_bound_set_to_max(HSemverBound bound)
 	reinterpret_cast<semver::Bound*>(bound)->setToMax();
 }
 
-SEMVER_API SemverParseResult semver_set_juncture(HSemverVersion version, uint64_t major, uint64_t minor, uint64_t patch, const char* prerelease)
+SEMVER_API SemverParseResult semver_set_juncture(HSemverVersion juncture, uint64_t major, uint64_t minor, uint64_t patch, const char* prerelease)
 {
-	return SEMVER_API SemverParseResult();
+	if (major > SEMVER_MAX_NUMERIC_IDENTIFIER)
+		return SEMVER_PARSE_MAJOR_TOO_LARGE;
+
+	if (minor > SEMVER_MAX_NUMERIC_IDENTIFIER)
+		return SEMVER_PARSE_MINOR_TOO_LARGE;
+
+	if (patch > SEMVER_MAX_NUMERIC_IDENTIFIER)
+		return SEMVER_PARSE_PATCH_TOO_LARGE;
+
+	auto prerelease_result = semver::Version::parsePrerelease(prerelease);
+
+	if (prerelease_result != semver::Version::PreleaseParseResult::SUCCESS)
+		return static_cast<SemverParseResult>(prerelease_result);
+
+	semver::Version* v = reinterpret_cast<semver::Version*>(juncture);
+
+	v->major = major;
+	v->minor = minor;
+	v->patch = patch;
+	v->setPrerelease(prerelease);
+
+	return SEMVER_PARSE_SUCCESS;
 }
 
 
@@ -614,8 +640,7 @@ SEMVER_API SemverParseResult semver_check_version_string(const char* version_str
 {
 	semver::Version v{};
 	SemverParseResult result = v.parse(version_str, semver::strlenSafe(version_str));
-	v.deleteBuild();
-	v.deletePrerelease();
+	v.deleteHeapResources();
 	return result;
 }
 
