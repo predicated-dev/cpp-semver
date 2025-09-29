@@ -1,10 +1,8 @@
+// Copyright 2025 Jasper Schellingerhout. All rights reserved.
+
 #include "version.h"
 #include <cstring>
 #include <unordered_map>
-
-
-
-
 
 namespace semver
 {

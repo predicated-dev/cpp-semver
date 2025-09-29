@@ -1,3 +1,5 @@
+// Copyright 2025 Jasper Schellingerhout. All rights reserved.
+
 #pragma once
 #include "version.h"
 #include <vector>

@@ -1,4 +1,6 @@
-﻿#include "semver.h"
+﻿// Copyright 2025 Jasper Schellingerhout. All rights reserved.
+
+#include "semver.h"
 #include "version.h"
 #include "range.h"
 #include <cstring>

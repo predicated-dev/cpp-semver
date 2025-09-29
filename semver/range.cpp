@@ -1,3 +1,5 @@
+// Copyright 2025 Jasper Schellingerhout. All rights reserved.
+
 #include "range.h"
 #include <algorithm>
 
