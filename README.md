@@ -193,7 +193,14 @@ SEMVER_API SemverParseResult semver_set_juncture(HSemverVersion juncture, uint64
 - The "all" **Range** has the minimum lower **Bound** and maximum upper **Bound**
 - The "none" **Range** is `>0.0.0-0 <0.0.0-0`, but exports as this string `<0.0.0-0`
 
-**Junctures** only exist within **Queries**, but have the same `HSemverVersion` handle as **Versions**. The [Semantic Version Query Language Specification](Semantic%20Version%20Query%20Language%20Specification.md) does not define build metadata on **Junctures**. However, setting build metadata on a **Juncture** with this API will not produce an error, nor will it affect the **Query**. The build will be applied to the **Juncture** as metadata (implementation-specific).
+#### Junctures 
+- define **Bounds** within **Queries**,
+- are specific points in Version ordering (equivalent to **Versions** without build metadata), and
+- have the same `HSemverVersion` handle as **Versions**.  
+
+
+Setting build metadata on a **Juncture** is not defined in the [Semantic Version Query Language Specification](Semantic%20Version%20Query%20Language%20Specification.md)], but this API allows it.
+
 
 ### Reading Components
 
@@ -506,6 +513,10 @@ Avoid wildcards with `~`/`^` since the tilde or caret will be redundant (e.g., `
 The source code is proprietary and not licensed for use, modification, or distribution. It is publicly viewable for reference only. See the `LICENSE` file for details.
 
 ## FAQ
+
+### Why did you make separate types for Versions and Junctures?
+
+See [Semantic Version Query Language Specification](Semantic%20Version%20Query%20Language%20Specification.md#Questions) 
 
 ### Why is the license not open-source?
 
