@@ -3,7 +3,7 @@
 #pragma once
 #include "API/semver.h"
 #include <string>
-
+#include <cstring>
 
 namespace semver
 {

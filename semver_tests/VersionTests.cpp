@@ -96,7 +96,7 @@ TEST(SemverVersion, ParseValidVersion)
 
 TEST(SemverVersion, ParseValidVersionNullSeparated)
 {
-    HSemverVersions versions = semver_versions_from_string("1.2.3-alpha+build", nullptr, SEMVER_ORDER_AS_GIVEN);
+    HSemverVersions versions = semver_versions_from_string("1.2.3-alpha+build\0", nullptr, SEMVER_ORDER_AS_GIVEN);
     EXPECT_EQ(semver_versions_count(versions), 1);
     HSemverVersion version = semver_versions_get_version_at_index(versions, 0);
    
