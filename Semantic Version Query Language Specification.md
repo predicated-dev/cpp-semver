@@ -25,11 +25,11 @@ This specification defines a query language for matching **Versions** against ra
 11. **Wildcard Version**: A **Partial Version** followed by `.` and **Wildcard**, or a lone **Wildcard** (e.g., `1.2.x`, `*`).
 12. **Wildcard**: A token (`x`, `X`, `*`) denoting any non-negative integer in a **Wildcard Version**.
 13. **Comparator**: A comparison operator (`>`, `>=`, `<`, `<=`, `=`) with a **Version Pattern** (e.g., `>=1.2.x`, `>1.2.3-alpha.3`). If no operator, `=` is assumed (e.g., `1.2.3` is `=1.2.3`).
-14. **Bound**: A boundary defining the edge of a set of **Versions**:
-      - **Exclusive Lower Bound**: `>` the highest value represented by the **Version Pattern**.
-      - **Inclusive Lower Bound**: `>=` the lowest value represented by the **Version Pattern**.
-      - **Exclusive Upper Bound**: `<` the lowest value represented by the **Version Pattern**.
-      - **Inclusive Upper Bound**: `<=` the highest value represented by the **Version Pattern**.
+14. **Bound**: Restricts a set of **Versions** to those
+      - `>` the *highest* value represented by the **Version Pattern**: **Exclusive Lower Bound**,
+      - `>=` the *lowest* value represented by the **Version Pattern**: **Inclusive Lower Bound**,
+      - `<` the *lowest* value represented by the **Version Pattern**: **Exclusive Upper Bound**, or
+      - `<=` the *highest* value represented by the **Version Pattern**: **Inclusive Upper Bound**
 15. **Explicit Bound**: Directly specified by an inequality **Comparator**:
 16. **Implicit Bound**: Implied when a bound is omitted:
       - **Lowest Bound**: `>=0.0.0`.
@@ -109,7 +109,7 @@ A **Stable Version** satisfies a **Range** if it falls within its **Bounds**. A 
    - Highest value: Wildcards as `MAX`, comparators are changed to avoid defining `MAX` (e.g., `<=1.2.x` := `<=1.2.MAX` := `<1.3.0-0`).
 2. **Juncture**:  
    Represents a single comparable value.
-3. **Comparators**: Constrain the set of matched **Versions**
+3. **Comparators**: Constrain the set of matched **Versions** to
    - **Explicit Bounds**:
      - **Exclusive Lower Bound**: `>` the *highest* value represented by the **Version Pattern** (e.g., `>2.4` := `>2.4.MAX` := `>=2.5.0`).
      - **Inclusive Lower Bound**: `>=` the *lowest* value represented by the **Version Pattern** (e.g., `>=2.4` := `>=2.4.0`).
@@ -243,7 +243,7 @@ Both are defined because of user preference and clarity, e.g., `2.*` conveys the
 
 Because multiple **Pre-release Extensions** in a **Range** would always be redundant.
 
-The intersection of the **Ranges** implicitly produced by **Version Constraints** (space separated) always reduce to a single upper and lower bound (i.e. a single implicit **Range**). Allowing **Pre-release Extensions** on individual **Version Constraints** would permit multiple extensions that single implicit **Range**, which would be redundant because the most permissive (lowest) **Pre-release Extension** would apply to the entire range. 
+The intersection of the **Ranges** implicitly produced by **Version Constraints** (space separated) always reduce to a single upper and lower bound (i.e. a single implicit **Range**). Allowing **Pre-release Extensions** on individual **Version Constraints** would permit multiple extensions on that single implicit **Range**, which would be redundant because the most permissive (lowest) **Pre-release Extension** would apply to the entire range. 
 
 For example:  `>=2.3.4 @alpha <2.5.6 @beta` (not valid syntax) is equivalent to `>=2.3.4 <2.5.6 @alpha` 
 
@@ -264,10 +264,10 @@ Similarly, `(MAX)`, the theoretical upper bound for **Pre-release Labels**, is n
 
 Future versions of this specification may choose to extend the query syntax to allow these.
 
-### Can my implementations allow **Build Metadata** in **Version Constraints**?
+### Can my implementations allow **Build Metadata** on **Junctures**?
 
 Yes, implementations that extends this specification without altering **Version** matching behavior as described in this specification are acceptable. **Build Metadata** is informational only and ignored in queries. 
 
-**Version Patterns** exclude **Build Metadata** because they are patterns to match **Versions**, not **Versions** themselves. For example, an implementation allowing `1.2.3+build123` as an extended **Version Pattern** should treat it the same as `1.2.3`.
+**Version Patterns** (which includes **Junctures**) exclude **Build Metadata** because they are patterns to match **Versions**, not **Versions** themselves. For example, an implementation allowing `=1.2.3+build123` as an extended **Juncture** should treat it the same as `1.2.3` for the purposes of matching **Versions**.
 
 
