@@ -7,6 +7,7 @@
 #include <vector>
 #include <string_view>
 #include <unordered_map>
+#include <algorithm>
 
 
 
@@ -221,6 +222,20 @@ SEMVER_API HSemverVersions semver_versions_from_string(const char* versions_str,
 
 	for (size_t i = 0; i < count; ++i)
 		block->versions[i].parse(versionStrs[i].data(), versionStrs[i].size());
+
+	if (order != SEMVER_ORDER_AS_GIVEN)
+	{
+		std::sort(block->versions, block->versions + count, 
+			[order](const semver::Version& a, const semver::Version& b) 
+			{
+				int comp = semver::Version::compare(a, b);
+				return (order == SEMVER_ORDER_ASC) ? (comp < 0) : (comp > 0);
+			}
+		);
+
+	}
+
+	block->order = order;
 
 	return reinterpret_cast<HSemverVersions>(block);
 }
@@ -673,13 +688,66 @@ SEMVER_API BOOL semver_query_matches_version(const HSemverQuery query, const HSe
 
 SEMVER_API HSemverVersions semver_query_match_versions(const HSemverQuery query, const HSemverVersions versions)
 {
-	semver::Query* q = reinterpret_cast<semver::Query*>(query);
 	SemverVersionBlock* b = SemverVersionBlock::pointerFromHandle(versions);
+
+	if (b->count == 0)
+		return SemverVersionBlock::getEmptyBlockHandle();
+
+	semver::Query* q = reinterpret_cast<semver::Query*>(query);
+
+	const semver::Version& low = q->lowBound().juncture;
+	const semver::Version& high = q->highBound().juncture;
 	 
 
 	std::vector<semver::Version*> matched;
 
-	for (size_t i = 0; i < b->count; ++i)
+	size_t startidx = 0;
+	size_t endidx = b->count;
+
+	if (b->order != SEMVER_ORDER_AS_GIVEN)
+	{
+		for (; startidx < startidx; ++startidx)
+		{
+			semver::Version* v = b->getVersionPtrAt(startidx);
+
+			bool inHalfRange = b->order == SEMVER_ORDER_ASC? 
+					semver::Version::compare(*v, low) > 0
+				  : semver::Version::compare(*v, high) < 0;
+
+			if (inHalfRange)
+			{
+				if (startidx == 0) // very first version was greater that bottom of range
+					return SemverVersionBlock::getEmptyBlockHandle();
+
+				--startidx;
+
+				break;
+			}
+		}
+
+
+		for (; endidx > startidx; --endidx)
+		{
+			semver::Version* v = b->getVersionPtrAt(endidx);
+
+			bool inHalfRange = b->order == SEMVER_ORDER_ASC ?
+			     semver::Version::compare(*v, high) < 0
+				: semver::Version::compare(*v, low) > 0;
+
+			if (inHalfRange)
+			{
+				if (endidx == b->count) // last one smaller than top of range
+					return SemverVersionBlock::getEmptyBlockHandle();
+
+				++endidx;
+
+				break;
+			}
+		}
+	}
+	
+
+	for (size_t i = startidx; i < endidx; ++i)
 	{
 		semver::Version* v = b->getVersionPtrAt(i);
 
@@ -699,6 +767,8 @@ SEMVER_API HSemverVersions semver_query_match_versions(const HSemverQuery query,
 	return reinterpret_cast<HSemverVersions>(result);
 
 }
+
+
 SEMVER_API HSemverVersion semver_query_highest_match(const HSemverQuery query, const HSemverVersions versions)
 {
 	semver::Query* q = reinterpret_cast<semver::Query*>(query);
