@@ -706,7 +706,7 @@ SEMVER_API HSemverVersions semver_query_match_versions(const HSemverQuery query,
 
 	if (b->order != SEMVER_ORDER_AS_GIVEN)
 	{
-		for (; startidx < startidx; ++startidx)
+		for (; startidx < endidx; ++startidx)
 		{
 			semver::Version* v = b->getVersionPtrAt(startidx);
 
@@ -718,8 +718,6 @@ SEMVER_API HSemverVersions semver_query_match_versions(const HSemverQuery query,
 			{
 				if (startidx == 0) // very first version was greater that bottom of range
 					return SemverVersionBlock::getEmptyBlockHandle();
-
-				--startidx;
 
 				break;
 			}
@@ -738,8 +736,6 @@ SEMVER_API HSemverVersions semver_query_match_versions(const HSemverQuery query,
 			{
 				if (endidx == b->count) // last one smaller than top of range
 					return SemverVersionBlock::getEmptyBlockHandle();
-
-				++endidx;
 
 				break;
 			}
