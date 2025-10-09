@@ -127,9 +127,12 @@ namespace semver
 	struct Query
 	{
 		std::vector<Range> rangeSet;
-
+		
+		const Bound& lowBound() const;
+		const Bound& highBound() const;
 		SemverQueryParseResult parse(const char* str, size_t len);
 
+		bool hasWithinAnyRangeBounds(const Version& version) const;
 		bool matches(const Version& version) const;
 		std::string toString() const;
 	
