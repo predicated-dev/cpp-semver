@@ -57,7 +57,40 @@ namespace semver
     }
 
 
-	SemverQueryParseResult Query::parse(const char* str, size_t len)
+    const Bound& Query::lowBound() const
+    {
+        
+        if (rangeSet.size() == 0)
+            return sMaxBound;
+
+        const Bound* min = &rangeSet[0].lower;
+
+        for (size_t i = 1; i < rangeSet.size(); ++i)
+        {
+            if (Version::compare(rangeSet[i].lower.juncture, min->juncture) < 0)
+                min = &rangeSet[i].lower;
+        }
+
+        return *min;
+    }
+
+    const Bound& Query::highBound() const
+    {
+        if (rangeSet.size() == 0)
+            return sMinBound;
+
+        const Bound* max = &rangeSet[0].upper;
+
+        for (size_t i = 1; i < rangeSet.size(); ++i)
+        {
+            if (Version::compare(rangeSet[i].upper.juncture, max->juncture) > 0)
+                max = &rangeSet[i].upper;
+        }
+
+        return *max;
+    }
+
+    SemverQueryParseResult Query::parse(const char* str, size_t len)
 	{ 
         rangeSet.clear();
 
@@ -216,13 +249,27 @@ namespace semver
         return parsedResult;
 	}
 
+    bool Query::hasWithinAnyRangeBounds(const Version& version) const
+    {
+        for (const Range& r : rangeSet)
+            if (r.hasWithinBounds(version))
+                return true;
+
+        return false;
+    }
+
     bool Query::matches(const Version& version) const
     {
         if (version.isDefined())
         {
-            for (const Range& r : rangeSet)
-                if (r.matches(version))
-                    return true;
+            if (version.isPrerelease())
+            {
+                for (const Range& r : rangeSet)
+                    if (r.matches(version))
+                        return true;
+            }
+            else
+                return hasWithinAnyRangeBounds(version);
         }
 
         return false;
@@ -590,19 +637,19 @@ namespace semver
         return addMaximumAllowWildcards(version_to, Bound::Included::YES);
     }
 
-
-    bool Range::matches(const Version& juncture) const
+   
+    bool Range::matches(const Version& version) const
     {
-        if (hasWithinBounds(juncture)) 
+        if (hasWithinBounds(version))
         {
-            if (!juncture.isPrerelease())
+            if (!version.isPrerelease())
                 return true;
             else
             {
                 return // prereleases need to meet extra conditions
-                    lower.canMatchPreReleases() && lower.juncture.sameCore(juncture) && lower.juncture.isPrerelease() ||
-                    upper.canMatchPreReleases() && upper.juncture.sameCore(juncture) && upper.juncture.isPrerelease() ||
-                    !minPreRelease.empty() && Version::comparePrereleases(minPreRelease.c_str(), juncture.getPrerelease()) <= 0;
+                    lower.canMatchPreReleases() && lower.juncture.sameCore(version) && lower.juncture.isPrerelease() ||
+                    upper.canMatchPreReleases() && upper.juncture.sameCore(version) && upper.juncture.isPrerelease() ||
+                    !minPreRelease.empty() && Version::comparePrereleases(minPreRelease.c_str(), version.getPrerelease()) <= 0;
             }
         }
 
@@ -610,16 +657,16 @@ namespace semver
 
     }
 
-    bool Range::hasWithinBounds(const Version& juncture) const
+    bool Range::hasWithinBounds(const Version& version) const
     {
-        if (!juncture.isDefined())
+        if (!version.isDefined())
             return false;
 
-        int compareLower = Version::compare(juncture, lower.juncture);
+        int compareLower = Version::compare(version, lower.juncture);
         if (compareLower < 0) 
             return false;
 
-        int compareUpper = Version::compare(juncture, upper.juncture);
+        int compareUpper = Version::compare(version, upper.juncture);
         if (compareUpper > 0) 
             return false;
 
