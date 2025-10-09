@@ -96,7 +96,11 @@ TEST(SemverVersion, ParseValidVersion)
 
 TEST(SemverVersion, ParseValidVersionNullSeparated)
 {
-    HSemverVersions versions = semver_versions_from_string("1.2.3-alpha+build", nullptr, SEMVER_ORDER_AS_GIVEN);
+// why add \0, because in some cases the compiler optimizes by placing all pchar string literal
+// constants in a single memory block with pchar strings separated by \0
+// which meanse we will read them all until we get two \0 in a row, plus 
+// its proper form as well to mark the end of the array
+    HSemverVersions versions = semver_versions_from_string("1.2.3-alpha+build\0", nullptr, SEMVER_ORDER_AS_GIVEN);
     EXPECT_EQ(semver_versions_count(versions), 1);
     HSemverVersion version = semver_versions_get_version_at_index(versions, 0);
    

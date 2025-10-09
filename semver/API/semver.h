@@ -2,14 +2,23 @@
 
 #pragma once
 
-#ifdef SEMVER_EXPORTS
-#define SEMVER_API __declspec(dllexport)
-#else
-#define SEMVER_API __declspec(dllimport)
+#if defined(_WIN32) || defined(_WIN64)
+  #ifdef SEMVER_EXPORTS
+	#define SEMVER_API __declspec(dllexport)
+  #else
+	#define SEMVER_API __declspec(dllimport)
+  #endif
+#else // not Windows
+  #ifdef SEMVER_EXPORTS
+	#define SEMVER_API __attribute__((visibility("default")))
+  #else
+	#define SEMVER_API
+  #endif
 #endif
 
 
 #include <stdint.h>
+#include <stddef.h> //is this needed?
 
 extern "C" // for rest of file
 {

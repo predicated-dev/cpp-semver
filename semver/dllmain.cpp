@@ -1,5 +1,7 @@
 // Copyright 2025 Jasper Schellingerhout. All rights reserved.
 
+
+#if defined(_WIN32) || defined(_WIN64)
 #include "pch.h"
 
 
@@ -18,4 +20,5 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     }
     return TRUE;
 }
+#endif
 

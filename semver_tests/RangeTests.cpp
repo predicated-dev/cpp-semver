@@ -658,3 +658,123 @@ TEST(SemverRange, QueryVersionBlock)
 
 }
 
+TEST(SemverRange, QueryASCSortedVersionBlock)
+{
+
+	const char versions_str[] =
+		"1.2.2, 1.2.4, 1.2.3-alpha, 1.3.0, 0.7.1, 0.7.2, 1.2.3, 0.7.3, 0.8.0, 0.7.2-beta, 1.2.5, 1.2.3-alpha, 0.0.0, "
+        "1.0.0, 2.0.0-alpha, 1.2.6, 999.999.999, 1.2.3-rc.1, 1.2.5-rc, 1.2.3-beta, 1.2.4-rc, 1.2.5-alpha, "
+		"1.0.0-alpha, 1.0.1, 2.0.0-alpha, 1.2.4-beta, 2.0.0, 2.0.1, 2.1.0, 1.2.5-rc, 2.1.1"	;
+
+	HSemverVersions versions = semver_versions_from_string(versions_str, ", ", SEMVER_ORDER_ASC);
+	size_t librarySplitCount = semver_versions_count(versions);
+
+	HSemverQuery query = semver_query_create();
+
+	semver_query_parse(query, "~1.2.3"); // >=1.2.3 <1.3.0-0`
+
+	HSemverVersions results = semver_query_match_versions(query, versions);
+	size_t resultsCount = semver_versions_count(results);
+
+	EXPECT_EQ(resultsCount, 4);
+	const char* matches1[4] =
+	{
+		"1.2.3",
+		"1.2.4",
+		"1.2.5",
+		"1.2.6",
+	};
+
+
+	for (size_t i = 0; i < resultsCount; ++i)
+	{
+		HSemverVersion version = semver_versions_get_version_at_index(results, i);
+		char* readstr = semver_get_version_string(version);
+		EXPECT_STREQ(matches1[i], readstr);
+		semver_free_string(readstr);
+	}
+
+	semver_query_parse(query, "^0.7.2"); // `>=0.7.2 <0.8.0-0`
+	results = semver_query_match_versions(query, versions);
+	resultsCount = semver_versions_count(results);
+
+
+	EXPECT_EQ(resultsCount, 2);
+	const char* matches2[2] =
+	{
+		"0.7.2",
+		"0.7.3",
+	};
+
+
+	for (size_t i = 0; i < resultsCount; ++i)
+	{
+		HSemverVersion version = semver_versions_get_version_at_index(results, i);
+		char* readstr = semver_get_version_string(version);
+		EXPECT_STREQ(matches2[i], readstr);
+		semver_free_string(readstr);
+	}
+
+	semver_query_parse(query, "1.2.3 - 1.2.5"); // `>=1.2.3 <=1.2.5` ///
+	results = semver_query_match_versions(query, versions);
+	resultsCount = semver_versions_count(results);
+
+
+	EXPECT_EQ(resultsCount, 3);
+	const char* matches3[3] =
+	{
+		"1.2.3",
+		"1.2.4",
+		"1.2.5",
+	};
+
+
+	for (size_t i = 0; i < resultsCount; ++i)
+	{
+		HSemverVersion version = semver_versions_get_version_at_index(results, i);
+		char* readstr = semver_get_version_string(version);
+		EXPECT_STREQ(matches1[i], readstr);
+		semver_free_string(readstr);
+	}
+
+
+	semver_query_parse(query, "*");
+	results = semver_query_match_versions(query, versions);
+	resultsCount = semver_versions_count(results);
+
+
+	EXPECT_EQ(resultsCount, 3);
+	const char* matches4[18] =
+	{
+		"0.0.0",
+		"0.7.1",
+		"0.7.2",
+		"0.7.3",
+		"0.8.0",
+		"1.0.0",
+		"1.0.1",
+		"1.2.2",
+		"1.2.3",
+		"1.2.4",
+		"1.2.5",
+		"1.2.6",
+		"1.3.0",
+		"2.0.0",
+		"2.0.1",
+		"2.1.0",
+		"2.1.1",
+		"999.999.999"
+	};
+
+
+	for (size_t i = 0; i < resultsCount; ++i)
+	{
+		HSemverVersion version = semver_versions_get_version_at_index(results, i);
+		char* readstr = semver_get_version_string(version);
+		EXPECT_STREQ(matches4[i], readstr);
+		semver_free_string(readstr);
+	}
+
+
+	semver_versions_dispose(versions);
+}

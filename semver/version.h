@@ -3,7 +3,7 @@
 #pragma once
 #include "API/semver.h"
 #include <string>
-
+#include <cstring> //why is this not imported via semver.h?
 
 namespace semver
 {
@@ -168,12 +168,6 @@ namespace semver
 
 		inline bool hasBuild() const { return flags & BUILD_IN_MAP; }
 		inline bool isPrerelease() const;
-
-		//bool isPrerelease() const
-//{
-//	return (*getPrerelease()) && !(isPrereleaseInline() && inline_prerelease[0] == SEMVER_UNINITIALIZED_LABEL[0]);
-//}
-
 
 		const char* getBuild() const;
 	
