@@ -295,12 +295,12 @@ namespace semver
 		bool hasBuild = (buildPos != len);
 
 		size_t prereleasePos = getCharPosEx('-', versionstr, len, dot2 + 1); // followed by pre-release and optionally a + and the build
-		bool hasPrerelease = prereleasePos < buildPos; // buildpos is len if not found
+		bool isPrerelease = prereleasePos < buildPos; // buildpos is len if not found
 
 
 		size_t patchEnd;
 
-		if (hasPrerelease)
+		if (isPrerelease)
 			patchEnd = prereleasePos;
 		else if (hasBuild)
 			patchEnd = buildPos;
@@ -333,7 +333,7 @@ namespace semver
 		}
 
 
-		if (hasPrerelease)
+		if (isPrerelease)
 		{
 			size_t pre_release_len = buildPos - prereleasePos - 1; // if no build, builtPos is set to the remainderLength
 
@@ -543,7 +543,8 @@ namespace semver
 		};
 	}
 
-	 bool Version::hasPrerelease() const
+	
+	 bool Version::isPrerelease() const
 	{
 		 return isPrereleaseOnHeap() ||
 			 inline_prerelease[0] != SEMVER_UNINITIALIZED_LABEL[0] &&
@@ -584,7 +585,7 @@ namespace semver
 				addNumericIdentifierToString(s, patch);
 
 
-		if (hasPrerelease())
+		if (isPrerelease())
 			s += '-' + std::string(getPrerelease());
 
 		if (hasBuild())

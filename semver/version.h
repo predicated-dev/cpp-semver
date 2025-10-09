@@ -138,10 +138,6 @@ namespace semver
 			setPrereleaseOnHeap();
 		}
 
-		bool isPrerelease() const
-		{
-			return (*getPrerelease()) && !(isPrereleaseInline() && inline_prerelease[0] == SEMVER_UNINITIALIZED_LABEL[0]);
-		}
 
 		
 
@@ -171,7 +167,13 @@ namespace semver
 		void deleteBuild();
 
 		inline bool hasBuild() const { return flags & BUILD_IN_MAP; }
-		inline bool hasPrerelease() const;
+		inline bool isPrerelease() const;
+
+		//bool isPrerelease() const
+//{
+//	return (*getPrerelease()) && !(isPrereleaseInline() && inline_prerelease[0] == SEMVER_UNINITIALIZED_LABEL[0]);
+//}
+
 
 		const char* getBuild() const;
 	
