@@ -743,7 +743,7 @@ TEST(SemverRange, QueryASCSortedVersionBlock)
 	resultsCount = semver_versions_count(results);
 
 
-	EXPECT_EQ(resultsCount, 3);
+	EXPECT_EQ(resultsCount, 18);
 	const char* matches4[18] =
 	{
 		"0.0.0",
