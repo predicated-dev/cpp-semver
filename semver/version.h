@@ -180,6 +180,27 @@ namespace semver
 			return sameCore(other) && strcmp(getPrerelease(), other.getPrerelease()) == 0; // builds are not compared
 		};
 
+		inline bool operator<(const Version& other) const
+		{
+			return Version::compare(*this, other) < 0;
+		}
+		
+		inline bool operator>(const Version& other) const
+		{
+			return Version::compare(*this, other) > 0;
+		}
+
+		inline bool operator<=(const Version& other) const
+		{
+			return Version::compare(*this, other) <= 0;
+		}
+
+		inline bool operator>=(const Version& other) const
+		{
+			return Version::compare(*this, other) >= 0;
+		}
+
+
 		static int comparePrereleases(const char* lhs, const char* rhs);
 
 		static int compare(const Version& lhs, const Version& rhs);
