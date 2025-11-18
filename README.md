@@ -530,4 +530,6 @@ This project needs to be more polished, with a license to be determined.
 
 The project is not yet licensed for use. Contact the maintainer for inquiries about usage during this pre-release phase.
 
+A great place to start is [Discussions](https://github.com/predicated-dev/cpp-semver/discussions)
+
 Copyright 2025 Jasper Schellingerhout. All rights reserved.
