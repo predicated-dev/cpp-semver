@@ -2,7 +2,7 @@
 
 ## Introduction
 
-`cpp-semver` is a C++ library with C exports for parsing, handling, and querying semantic versions per [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) and the [Semantic Version Query Language Specification](Semantic%20Version%20Query%20Language%20Specification.md). It supports parsing version strings, comparing versions, and matching versions against **Range Sets**. It extends node-semver's query syntax with **Pre-release Extensions** (`@<min-prerelease-label>`) for precise pre-release control.
+`cpp-semver` is a C++ library with C exports for parsing, handling, and querying semantic versions per [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) and the [Semantic Version Query Language Specification](https://predicate.dev/svql/). It supports parsing version strings, comparing versions, and matching versions against **Range Sets**. It extends node-semver's query syntax with **Pre-release Extensions** (`@<min-prerelease-label>`) for precise pre-release control.
 
 The library is compiles to a Windows DLL / Linux shared library with a C-style API. It’s proprietary, viewable for reference but not licensed for use.
 
@@ -516,7 +516,7 @@ The source code is proprietary and not licensed for use, modification, or distri
 
 ### Why did you make separate types for Versions and Junctures?
 
-See [Semantic Version Query Language Specification](Semantic%20Version%20Query%20Language%20Specification.md#Questions) 
+See [Semantic Version Query Language Specification](https://predicate.dev/svql/#Questions) 
 
 ### Why is the license not open-source?
 
