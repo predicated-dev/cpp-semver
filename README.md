@@ -199,7 +199,7 @@ SEMVER_API SemverParseResult semver_set_juncture(HSemverVersion juncture, uint64
 - have the same `HSemverVersion` handle as **Versions**.  
 
 
-Setting build metadata on a **Juncture** is not defined in the [Semantic Version Query Language Specification](https://predicate.dev/svql/#version-comparison), but this API allows it.
+Setting build metadata on a **Juncture** is not defined in the [Semantic Version Query Language Specification](https://predicate.dev/svql/), but this API allows it.
 
 
 ### Reading Components
@@ -530,6 +530,8 @@ This project needs to be more polished, with a license to be determined.
 
 The project is not yet licensed for use. Contact the maintainer for inquiries about usage during this pre-release phase.
 
+
 A great place to start is [Discussions](https://github.com/predicated-dev/cpp-semver/discussions)
 
+---
 Copyright 2025 Jasper Schellingerhout. All rights reserved.

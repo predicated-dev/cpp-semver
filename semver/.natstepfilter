@@ -1,0 +1,3 @@
+<StepFilter>
+  <Function Name="semver::strlenSafe(const char*)" />
+</StepFilter>

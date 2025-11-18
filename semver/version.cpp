@@ -60,7 +60,7 @@ namespace semver
 		return copy;
 	}
 
-	static std::unordered_map<const Version*, const char*> sbuild_metadata;
+	static std::unordered_map<const Version*, const char*> sbuild_metadata; 
 
 	inline static bool isWildcardCharacter(char c)
 	{
