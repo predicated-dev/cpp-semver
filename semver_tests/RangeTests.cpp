@@ -4,29 +4,6 @@
 #include "gtest/gtest.h"
 #include "API/semver.h"
 
-// TEST(SemverRange, ParseValidRange) {
-//     HSemverQuery query = semver_query_create("1.2.3");
-//
-//     HSemverVersion version = semver_version_create("1.2.3");
-//     EXPECT_TRUE(semver_version_in_range(version, query));
-//     
-//
-//     version = semver_version_create("1.2.2");
-//     EXPECT_FALSE(semver_version_in_range(version, query));
-//     
-//
-//     version = semver_version_create("1.2.4");
-//     EXPECT_FALSE(semver_version_in_range(version, query));
-//     semver_version_dispose(version);
-//
-//     semver_range_dispose(query);
-//
-//
-//
-///*    HSemverVersion version = nullptr;
-//    auto result = semver_version_parse("1.2.3", &version);
-//    EXPECT_EQ(result, SEMVER_QUERY_PARSE_SUCCESS)*/;
-//}
 
 TEST(SemverRange, ParseGTERange)
 {
