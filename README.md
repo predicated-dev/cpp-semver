@@ -2,7 +2,7 @@
 
 ## Introduction
 
-`cpp-semver` is a C++ library with C exports for parsing, handling, and querying semantic versions per [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) and the [Semantic Version Query Language Specification](https://predicate.dev/svql/). It supports parsing version strings, comparing versions, and matching versions against **Range Sets**. It extends node-semver's query syntax with **Pre-release Extensions** (`@<min-prerelease-label>`) for precise pre-release control.
+`cpp-semver` is a C++ library with C exports for parsing, handling, and querying semantic versions per [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html) and the [Semantic Version Query Language (SVQL) Specification](https://predicate.dev/svql/). It supports parsing version strings, comparing versions, and matching versions against **Range Sets**. It extends node-semver's query syntax with **Pre-release Extensions** (`@<min-prerelease-label>`) for precise pre-release control.
 
 The library is compiles to a Windows DLL / Linux shared library with a C-style API. It’s proprietary, viewable for reference but not licensed for use.
 
@@ -31,7 +31,7 @@ API in `api/semver.h` uses C-style exports. API calls are made against transpare
 **Version** (`HSemverVersion`), **Version Array** (`HSemverVersions`) and **Query**(`HSemverQuery`) objects must be constructed before use and disposed to free memory. 
 
 - **Versions** follow [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html).
-- **Queries** follow the [Semantic Version Query Language Specification](https://predicate.dev/svql/), extending node-semver (e.g., `>=1.2.3 @rc`).
+- **Queries** follow the [Semantic Version Query Language Specification](https://predicate.dev/svql/#query-syntax), extending node-semver (e.g., `>=1.2.3 @rc`).
 - Dispose does not modify handles. Callers should consider setting to NULL (0), to track disposed resources.
 
 #### Basic Constructors
@@ -124,7 +124,7 @@ Fatal errors halt parsing; non-fatal (whitespace) continue with warnings.
 
 ### Parsing Queries
 
-To parse queries conforming to the [Semantic Version Query Language Specification]https://predicate.dev/svql/)
+To parse queries conforming to the [Semantic Version Query Language Specification](https://predicate.dev/svql/#query-syntax)
 ```cpp
 SEMVER_API SemverQueryParseResult semver_query_parse(HSemverQuery query, const char* query_str);
 ```
@@ -199,7 +199,7 @@ SEMVER_API SemverParseResult semver_set_juncture(HSemverVersion juncture, uint64
 - have the same `HSemverVersion` handle as **Versions**.  
 
 
-Setting build metadata on a **Juncture** is not defined in the [Semantic Version Query Language Specification](https://predicate.dev/svql/), but this API allows it.
+Setting build metadata on a **Juncture** is not defined in the [Semantic Version Query Language Specification](https://predicate.dev/svql/#version-comparison), but this API allows it.
 
 
 ### Reading Components
@@ -248,7 +248,7 @@ SEMVER_API BOOL semver_bound_get_is_inclusive(const HSemverBound bound);
 SEMVER_API HSemverVersion semver_bound_get_juncture(const HSemverBound bound);
 ```
 
-**Juncture** is a specific point in **Version** ordering. Defined in the [Semantic Version Query Language Specification](https://predicate.dev/svql/) as a **Version** without build metadata.
+**Juncture** is a specific point in **Version** ordering. Defined in the [Semantic Version Query Language Specification](https://predicate.dev/svql/#terms) as a **Version** without build metadata.
 
 We can generate strings from **Version** and **Query** object that would produce equivalent objects if parsed.
 
@@ -369,7 +369,7 @@ See the [Semantic Version Query Language Specification](https://predicate.dev/sv
 
 ## Range Syntax and Terminology
 
-Per the [Semantic Version Query Language Specification](https://predicate.dev/svql/):
+Per the [Semantic Version Query Language Specification]https://predicate.dev/svql/#matching-versions):
 - **Version Constraint**: **Comparator** (e.g., `>=1.2.3`), **Tilde Constraint** (`~1.2.3`), **Caret Constraint** (`^1.2.3`), or **Hyphen Constraint** (`1.2.3 - 4.5.6`).
 - **Range**: **Version Constraints** joined by whitespace with an optional **Pre-release Extension** (e.g., `>=1.2.3 @rc`).
 - **Query**: **Ranges** joined by `||` (e.g., `>=1.2.3 <1.3.0 @rc || >=2.0.0`).
@@ -506,7 +506,7 @@ Avoid wildcards with `~`/`^` since the tilde or caret will be redundant (e.g., `
 
 ### Builds
 
-**Build Metadata** (e.g., `1.2.3+build123`) is informational and ignored in comparisons and ranges. The [Semantic Version Query Language Specification](https://predicate.dev/svql/) defines a **Juncture** as a single point in version ranges which only includes the **Core Triplet** and **Pre-release Label**. Our API will not error for **Build Metadata** if added to a **Juncture**, it will simply be ignored in queries.
+**Build Metadata** (e.g., `1.2.3+build123`) is informational and ignored in comparisons and ranges. The [Semantic Version Query Language Specification](https://predicate.dev/svql/#terms) defines a **Juncture** as a single point in version ranges which only includes the **Core Triplet** and **Pre-release Label**. Our API will not error for **Build Metadata** if added to a **Juncture**, it will simply be ignored in queries.
 
 ## License
 
@@ -516,7 +516,7 @@ The source code is proprietary and not licensed for use, modification, or distri
 
 ### Why did you make separate types for Versions and Junctures?
 
-See [Semantic Version Query Language Specification](https://predicate.dev/svql/#Questions) 
+See [Semantic Version Query Language Specification](https://predicate.dev/svql/#questions) 
 
 ### Why is the license not open-source?
 
