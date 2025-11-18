@@ -199,7 +199,7 @@ SEMVER_API SemverParseResult semver_set_juncture(HSemverVersion juncture, uint64
 - have the same `HSemverVersion` handle as **Versions**.  
 
 
-Setting build metadata on a **Juncture** is not defined in the [Semantic Version Query Language Specification]https://predicate.dev/svql/)], but this API allows it.
+Setting build metadata on a **Juncture** is not defined in the [Semantic Version Query Language Specification](https://predicate.dev/svql/), but this API allows it.
 
 
 ### Reading Components
@@ -524,7 +524,7 @@ The project is proprietary to retain control during early development.
 
 ### Will this ever become open-source?
 
-The intention is to open-source the project once it’s more polished, with a license to be determined.
+This project needs to be more polished, with a license to be determined.
 
 ### Can I use it in my project?
 
