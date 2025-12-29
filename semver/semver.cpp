@@ -552,6 +552,7 @@ SEMVER_API HSemverRange semver_query_add_range(HSemverQuery query)
 	return reinterpret_cast<HSemverRange>(&r);
 }
 
+
 SEMVER_API void semver_query_erase_range_at_index(HSemverQuery query, size_t index) //also disposes the range
 {
 	semver::Query* q = reinterpret_cast<semver::Query*>(query);

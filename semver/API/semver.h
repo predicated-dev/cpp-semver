@@ -37,8 +37,8 @@ extern "C" // for rest of file
 	static const uint64_t SEMVER_MAX_NUMERIC_IDENTIFIER = 0x001F'FFFF'FFFF'FFFF; // 2^53 - 1, the maximum value for a numeric identifier in Semver (maximum value for lossless representation of integers in double precision floating point variables)
 
 	// values over SEMVER_MAX_NUMERIC_IDENTIFIER are reserved for 
-	// special iterpretations of the numeric identifier parts of the version
-	static const uint64_t SEMVER_UNINITIALIZED_IDENTIFIER = 0xDEAD'DEAD'DEAD'DEAD; // (16045725885737590445) version numbers are initialized to this value. If parsing fail, core version parts will have this value if the parser did not reach them yet 
+	// special interpretations of the numeric identifier parts of the version
+	static const uint64_t SEMVER_UNINITIALIZED_IDENTIFIER = 0xDEAD'DEAD'DEAD'DEAD; // (16 045 725 885 737 590 445) version numbers are initialized to this value. If parsing fails, core version parts will have this value if the parser did not reach them yet 
 	static const uint64_t SEMVER_WILDCARD_IDENTIFIER = 0xFEED'FEED'FEED'FEED; // attempting to parse with a wildcard will return this value for major, minor or patch.
 
     // builds are pre-releases are "labels"
@@ -52,12 +52,9 @@ extern "C" // for rest of file
 	typedef struct SemverVersionsImpl* HSemverVersions; // transparent proto handle for a Version block in or a subset or ordered set from that block
 
 
-	typedef struct SemverQueryImpl* HSemverQuery; // transparent handle for a verion query (a set of 1 or more ranges)
+	typedef struct SemverQueryImpl* HSemverQuery; // transparent handle for a version query (a set of 1 or more ranges)
 	typedef struct SemverRangeImpl* HSemverRange; // transparent handle for a range (a query has 1 or more ranges)
 	typedef struct SemverBoundImpl* HSemverBound; // transparent handle for a bound (upper or lower bound in a range)
-
-
-
 
 
 	enum SemverParseResult : uint8_t 
@@ -137,7 +134,6 @@ extern "C" // for rest of file
 	// version constructors
 	///////////////////////
 
-
 	SEMVER_API HSemverVersion semver_version_create_defined(uint64_t major, uint64_t minor, uint64_t patch, const char* prerelease, const char* build); // Create a new version object from a version string, returns an object regardless of error
 
 	SEMVER_API HSemverVersion semver_version_create();
@@ -163,8 +159,6 @@ extern "C" // for rest of file
 	///////////////
 
 	SEMVER_API SemverQueryParseResult semver_query_parse(HSemverQuery query, const char* query_str);
-
-
 
 
 	// destructors
@@ -196,11 +190,13 @@ extern "C" // for rest of file
 
 	// version/query string destructor
 	////////////////////////////
+
 	SEMVER_API void semver_free_string(char* str);
 
 
 	// Query info
 	/////////////
+	
 	SEMVER_API size_t semver_query_get_range_count(const HSemverQuery query);
 	SEMVER_API HSemverRange semver_query_get_range_at_index(const HSemverQuery query, size_t index);
 	SEMVER_API HSemverBound semver_range_get_lower_bound(const HSemverRange range);
@@ -223,13 +219,16 @@ extern "C" // for rest of file
 
 
 	// Query mutators
-	/////////////
+	/////////////////
+
 	SEMVER_API HSemverRange semver_query_add_range(HSemverQuery query);
+
 	SEMVER_API void semver_query_erase_range_at_index(HSemverQuery query, size_t index); //also disposes the range
 
 	SEMVER_API SemverParseResult semver_range_set_min_prerelease(HSemverRange range, const char* prerelease);
 	SEMVER_API void semver_range_set_to_all(HSemverRange range);
 	SEMVER_API void semver_range_set_to_none(HSemverRange range);
+
 
 	SEMVER_API void semver_bound_set_is_inclusive( HSemverBound bound, bool inclusive);
 	SEMVER_API void semver_bound_set_juncture(HSemverBound bound, HSemverVersion juncture);
@@ -237,7 +236,6 @@ extern "C" // for rest of file
 	SEMVER_API void semver_bound_set_to_max(HSemverBound bound);
 
 	SEMVER_API SemverParseResult semver_set_juncture(HSemverVersion juncture, uint64_t major, uint64_t minor, uint64_t patch, const char* prerelease); //Junctures don't have build metadata
-
 
 	// version comparison
 	/////////////////////
@@ -287,6 +285,7 @@ extern "C" // for rest of file
 
 	// Query check methods
 	///////////////////////
+
 	SEMVER_API const char* semver_get_query_string(const HSemverQuery query); // \0 terminated string, freed when HSemverVersion handle is disposed
 
 }
