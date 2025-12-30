@@ -369,7 +369,7 @@ See the [Semantic Version Query Language Specification](https://predicate.dev/sv
 
 ## Range Syntax and Terminology
 
-Per the [Semantic Version Query Language Specification]https://predicate.dev/svql/#matching-versions):
+Per the [Semantic Version Query Language Specification](https://predicate.dev/svql/#matching-versions):
 - **Version Constraint**: **Comparator** (e.g., `>=1.2.3`), **Tilde Constraint** (`~1.2.3`), **Caret Constraint** (`^1.2.3`), or **Hyphen Constraint** (`1.2.3 - 4.5.6`).
 - **Range**: **Version Constraints** joined by whitespace with an optional **Pre-release Extension** (e.g., `>=1.2.3 @rc`).
 - **Query**: **Ranges** joined by `||` (e.g., `>=1.2.3 <1.3.0 @rc || >=2.0.0`).
