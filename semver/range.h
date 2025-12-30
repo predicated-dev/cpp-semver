@@ -124,16 +124,47 @@ namespace semver
 
 	};
 
-	struct Query
+	struct RangeSet : std::vector<Range> 
 	{
-		std::vector<Range> rangeSet;
-		
 		const Bound& lowBound() const;
 		const Bound& highBound() const;
-		SemverQueryParseResult parse(const char* str, size_t len);
 
 		bool hasWithinAnyRangeBounds(const Version& version) const;
 		bool matches(const Version& version) const;
+		SemverQueryParseResult parse(const char* str, size_t len); // SVQL 1.0.0 queries were only a range set
+
+	};
+
+	struct Query
+	{
+		std::string productName; //may be blank if parsed string does not contain a product
+		RangeSet rangeSet;
+		
+		const Bound& lowBound() const 
+		{	
+			return rangeSet.lowBound();	
+		}
+		
+		const Bound& highBound() const 
+		{ 
+			return rangeSet.highBound(); 
+		}
+
+		SemverQueryParseResult parse(const char* str, size_t len)
+		{
+			return rangeSet.parse(str, len); // SVQL 1.0.0 queries were only a range set
+		}
+
+		bool hasWithinAnyRangeBounds(const Version& version) const 
+		{
+			return rangeSet.hasWithinAnyRangeBounds(version);
+		}
+
+		bool matches(const Version& version) const
+		{
+			return rangeSet.matches(version);
+		}
+
 		std::string toString() const;
 	
 	};

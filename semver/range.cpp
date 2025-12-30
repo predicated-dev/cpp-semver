@@ -57,42 +57,43 @@ namespace semver
     }
 
 
-    const Bound& Query::lowBound() const
+    const Bound& RangeSet::lowBound() const
     {
         
-        if (rangeSet.size() == 0)
+        if (size() == 0)
             return sMaxBound;
 
-        const Bound* min = &rangeSet[0].lower;
+       
+        const Bound* min = &at(0).lower;
 
-        for (size_t i = 1; i < rangeSet.size(); ++i)
+        for (size_t i = 1; i < size(); ++i)
         {
-            if (Version::compare(rangeSet[i].lower.juncture, min->juncture) < 0)
-                min = &rangeSet[i].lower;
+            if (Version::compare(at(i).lower.juncture, min->juncture) < 0)
+                min = &at(i).lower;
         }
 
         return *min;
     }
 
-    const Bound& Query::highBound() const
+    const Bound& RangeSet::highBound() const
     {
-        if (rangeSet.size() == 0)
+        if (size() == 0)
             return sMinBound;
 
-        const Bound* max = &rangeSet[0].upper;
+        const Bound* max = &at(0).upper;
 
-        for (size_t i = 1; i < rangeSet.size(); ++i)
+        for (size_t i = 1; i < size(); ++i)
         {
-            if (Version::compare(rangeSet[i].upper.juncture, max->juncture) > 0)
-                max = &rangeSet[i].upper;
+            if (Version::compare(at(i).upper.juncture, max->juncture) > 0)
+                max = &at(i).upper;
         }
 
         return *max;
     }
 
-    SemverQueryParseResult Query::parse(const char* str, size_t len)
+    SemverQueryParseResult RangeSet::parse(const char* str, size_t len)
 	{ 
-        rangeSet.clear();
+        clear();
 
         Range range = sAllRange;
  
@@ -123,7 +124,7 @@ namespace semver
 
             if (atEnd || atDivider)
             {
-                rangeSet.push_back(range);
+                push_back(range);
 
                 range = sAllRange;
 
@@ -243,28 +244,28 @@ namespace semver
 
         }
 
-        if (rangeSet.size() == 0 || !range.isAll()) // consider combining overlapped ranges provided that explicit pre-release are retained
-            rangeSet.push_back(range); //only or with all if not already have other bounds
+        if (size() == 0 || !range.isAll()) // consider combining overlapped ranges provided that explicit pre-release are retained
+            push_back(range); //only or with all if not already have other bounds
 
         return parsedResult;
 	}
 
-    bool Query::hasWithinAnyRangeBounds(const Version& version) const
+    bool RangeSet::hasWithinAnyRangeBounds(const Version& version) const
     {
-        for (const Range& r : rangeSet)
+        for (const Range& r : *this)
             if (r.hasWithinBounds(version))
                 return true;
 
         return false;
     }
 
-    bool Query::matches(const Version& version) const
+    bool RangeSet::matches(const Version& version) const
     {
         if (version.isDefined())
         {
             if (version.isPrerelease())
             {
-                for (const Range& r : rangeSet)
+                for (const Range& r : *this)
                     if (r.matches(version))
                         return true;
             }
