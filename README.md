@@ -475,7 +475,7 @@ Inclusive:
 - `1.2.3 - 4.5.6`:= `>=1.2.3 <=4.5.6`.
 - `1 - 2.3` := `1.0.0 - 2.3.0`: `>=1.0.0 <=2.3.0`.
 - `1.2.3 - 4.5.6 @0` := `>=1.2.3-0 <=4.5.6 @0` (all pre-releases between `1.2.3` and `4.5.6`).
-- `1.2.3 - 4.5.6 @beta` := `>=1.2.3-beta <=4.5.6 @beta` (pre-releases `>=beta` between `1.2.3` and `4.5.6`).
+- `1.2.3 - 4.5.6 @beta` := `>=1.2.3 <=4.5.6 @beta` (pre-releases `>=beta` between `1.2.3` and `4.5.6`).
 - `1.2.3-rc - 4.5.6 @alpha` (pre-releases `>=alpha` between `1.2.3-rc` and `4.5.6`).
 
 ### Tilde Constraints
