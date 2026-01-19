@@ -91,6 +91,29 @@ namespace semver
         return *max;
     }
 
+    SemverQueryParseResult Query::parse(const char* str, size_t len)
+    {
+        contextName = "";
+        size_t pos = 0;
+        while (pos < len && str[pos] <= ' ')
+            ++pos;
+       
+        if (str[pos] == '"')
+        {
+            size_t closeQuotePos = getCharPosEx('"', str, len, pos + 1);
+            if (closeQuotePos < len)
+            {
+                contextName = cloneStr(str + pos + 1, closeQuotePos - pos - 1);
+                pos = closeQuotePos + 1;
+            }
+            //else
+               // return some error  ... poorly formed context   
+        }
+
+        return rangeSet.parse(str + pos, len - pos);
+       
+    }
+
     SemverQueryParseResult RangeSet::parse(const char* str, size_t len)
 	{ 
         clear();

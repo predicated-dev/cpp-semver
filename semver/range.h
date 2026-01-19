@@ -137,7 +137,7 @@ namespace semver
 
 	struct Query
 	{
-		std::string productName; //may be blank if parsed string does not contain a product
+		std::string contextName; //may be blank if parsed string does not contain a product
 		RangeSet rangeSet;
 		
 		const Bound& lowBound() const 
@@ -150,10 +150,7 @@ namespace semver
 			return rangeSet.highBound(); 
 		}
 
-		SemverQueryParseResult parse(const char* str, size_t len)
-		{
-			return rangeSet.parse(str, len); // SVQL 1.0.0 queries were only a range set
-		}
+		SemverQueryParseResult parse(const char* str, size_t len);
 
 		bool hasWithinAnyRangeBounds(const Version& version) const 
 		{
