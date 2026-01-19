@@ -13,24 +13,6 @@ namespace semver
 	}
 
 
-	static size_t getCharPos(char c, const char* buffer, size_t len)
-	{
-		for (size_t i = 0; i < len; ++i)
-			if (buffer[i] == c)
-				return i;
-
-		return len; // consider vs -1
-	}
-	
-	static size_t getCharPosEx(char c, const char* buffer, size_t len, size_t start)
-	{
-		for (size_t i = start; i < len; ++i)
-			if (buffer[i] == c)
-				return i;
-
-		return len; // consider vs -1
-	}
-
 	static size_t getDotPos(const char* buffer, size_t len)
 	{
 		for (size_t i = 0; i < len; ++i)

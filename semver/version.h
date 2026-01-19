@@ -9,6 +9,24 @@ namespace semver
 {
 	char* cloneStr(const char* src, size_t len);
 
+	inline size_t getCharPos(char c, const char* buffer, size_t len)
+	{
+		for (size_t i = 0; i < len; ++i)
+			if (buffer[i] == c)
+				return i;
+
+		return len; // consider vs -1
+	}
+
+	static size_t getCharPosEx(char c, const char* buffer, size_t len, size_t start)
+	{
+		for (size_t i = start; i < len; ++i)
+			if (buffer[i] == c)
+				return i;
+
+		return len; // consider vs -1
+	}
+
 	inline size_t strlenSafe(const char* src) // we could add some extra safety checks for ridiculously long strings also later
 	{
 		if (!src)
