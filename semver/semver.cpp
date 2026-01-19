@@ -8,6 +8,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <algorithm>
+#include "versionblock.h"
 
 
 
@@ -38,136 +39,6 @@ SEMVER_API SemverParseResult semver_version_parse(HSemverVersion version, const 
 
 // version array constructors
 /////////////////////////////
-
-struct alignas(alignof(semver::Version)) SemverVersionBlock
-{
-	enum class VersionOwnership : uint32_t // also serve as magic numbers to ensure pointers passed to the API originated from us
-	{
-		OWNS       = 0xed3d995e,
-		REFERENCES  = 0xde3d995e  // first to hex values exchanged
-	};
-
-
-	static const SemverVersionBlock sEmpty;
-
-	static SemverVersionBlock* getEmptyBlockPointer() { return const_cast<SemverVersionBlock*>(&SemverVersionBlock::sEmpty); }
-
-	static HSemverVersions getEmptyBlockHandle() { return reinterpret_cast<HSemverVersions>(getEmptyBlockPointer()); };
-	
-
-	static SemverVersionBlock* pointerFromHandle(const HSemverVersions handle)
-	{
-		if (!handle)
-			return getEmptyBlockPointer();
-
-		auto version_block = reinterpret_cast<SemverVersionBlock*>(handle);
-
-		switch (version_block->ownership)
-		{ 
-		case(VersionOwnership::OWNS):
-		case(VersionOwnership::REFERENCES):
-			return version_block;
-		default:
-			return getEmptyBlockPointer();
-		}
-
-	}
-
-
-	VersionOwnership ownership; //must match one of the two magic numbers
-	SemverOrder order;
-	uint8_t reserved[3]; // explicit padding
-	size_t count;
-	SemverVersionBlock* owner; // must have VersionOwnership::OWNED or be nullptr
-
-	union
-	{
-		semver::Version versions[1];     // empty flexible variable array [] is supported in visual studio only 
-		semver::Version* versionPtrs[5]; // variable, but since versions are 40 bytes I might as well make this 5 so debugging is easiwer
-	};
-
-
-	semver::Version* getVersionPtrAt(size_t index) const
-	{
-		switch (ownership)
-		{
-		case(VersionOwnership::OWNS):
-			return const_cast<semver::Version*>(&versions[index]);
-
-		case(VersionOwnership::REFERENCES):
-			return versionPtrs[index];
-
-		default:
-			return nullptr;
-		}
-	}
-
-	SemverVersionBlock(size_t count, SemverVersionBlock* owner = nullptr) 
-		: ownership( owner ? VersionOwnership::REFERENCES : VersionOwnership::OWNS), 
-		order(SEMVER_ORDER_AS_GIVEN),
-		owner(owner),
-		count(count) {};
-
-};
-
-static std::unordered_map<SemverVersionBlock*, std::vector<SemverVersionBlock*>> sVersionBlockRefs;
-
-
-static_assert(offsetof(SemverVersionBlock, ownership) == 0, "ownership offset mismatch");
-static_assert(offsetof(SemverVersionBlock, count) == 8, "count offset mismatch");
-static_assert(offsetof(SemverVersionBlock, owner) == 16, "union offset mismatch");
-static_assert(offsetof(SemverVersionBlock, versions) == 24, "union offset mismatch");
-static_assert(sizeof(SemverVersionBlock) == 64, "Unexpected struct size"); // with flexible array it was only 32 (24 + some bogus 8 byte padding). With single entry its 64 (Version is 40 bytes)
-
-static_assert(std::is_trivially_copyable<semver::Version*>::value, "Version* must be trivially copyable");
-static_assert(alignof(SemverVersionBlock) >= alignof(semver::Version), "Block alignment must support embedded Version");
-static_assert(offsetof(SemverVersionBlock, versions) == offsetof(SemverVersionBlock, versionPtrs), "Union layout must be consistent");
-
-
-const SemverVersionBlock SemverVersionBlock::sEmpty = SemverVersionBlock{ 0, nullptr };
-
-static SemverVersionBlock* createVersionBlock(size_t count)
-{
-	if (count == 0)
-		return SemverVersionBlock::getEmptyBlockPointer(); // all empty blocks share a single empty block pointer 
-
-	size_t versionsSize = sizeof(semver::Version) * count;
-	size_t totalSize = sizeof(SemverVersionBlock) - sizeof(semver::Version) + versionsSize; //one version size already counted
-
-	auto* block = static_cast<SemverVersionBlock*>(::operator new(totalSize));
-	
-	new (block) SemverVersionBlock{ count, nullptr }; // use memory at start of block
-	memset(&block->versions, 0, versionsSize); // Versions with all 0s
-
-	for (size_t i = 0; i < block->count; ++i)
-		block->versions[i].flags |= semver::Version::Flags::MANAGED;
-
-	return block;
-}
-
-static SemverVersionBlock* createVersionReferenceBlock(SemverVersionBlock* owner, size_t count)
-{
-	if (count == 0)
-		return SemverVersionBlock::getEmptyBlockPointer(); // all empty blocks share a single empty block pointer 
-
-	size_t versionRefsSize = sizeof(semver::Version*) * count;
-	size_t totalSize = sizeof(SemverVersionBlock) - sizeof(semver::Version) + versionRefsSize; //union has since of Version
-
-	if (totalSize < sizeof(SemverVersionBlock))
-		totalSize = sizeof(SemverVersionBlock); // if we have fewer the 5 pointers (Version is 40 bytes) we probably want to allocate at least what sizeof expects
-
-	auto* block = static_cast<SemverVersionBlock*>(::operator new(totalSize));
-	new (block) SemverVersionBlock{ count, owner }; 
-
-	std::fill_n(block->versionPtrs, count, nullptr); //all pointers set to null
-	
-	sVersionBlockRefs[owner].push_back(block);
-
-
-	return block;
-
-}
-
 
 static std::vector<std::string_view> splitMultistringBuffer(const char* buffer)
 {
@@ -211,14 +82,14 @@ static std::vector<std::string_view> splitBuffer(std::string_view buffer, std::s
 SEMVER_API HSemverVersions semver_versions_from_string(const char* versions_str, const char* separator, SemverOrder order)
 {
 	if (!versions_str)
-		return reinterpret_cast<HSemverVersions>(SemverVersionBlock::getEmptyBlockHandle());
+		return reinterpret_cast<HSemverVersions>(semver::SemverVersionBlock::getEmptyBlockHandle());
 
 	std::vector<std::string_view> versionStrs = (!separator || *separator == '\0') ? splitMultistringBuffer(versions_str) : splitBuffer(versions_str, separator);
 
 	size_t count = versionStrs.size();
 
 
-	SemverVersionBlock* block = createVersionBlock(count);
+	semver::SemverVersionBlock* block = semver::createVersionBlock(count);
 
 	for (size_t i = 0; i < count; ++i)
 		block->versions[i].parse(versionStrs[i].data(), versionStrs[i].size());
@@ -242,8 +113,14 @@ SEMVER_API HSemverVersions semver_versions_from_string(const char* versions_str,
 
 SEMVER_API HSemverVersions semver_versions_create(size_t count)
 {
-	SemverVersionBlock* block = createVersionBlock(count);
+	semver::SemverVersionBlock* block = semver::createVersionBlock(count);
 	return reinterpret_cast<HSemverVersions>(block);
+}
+
+SEMVER_API HSemverContext semver_context_create(const char* context_name)
+{
+	//TODO ADD CONTEXT CONSTRUCTOR HERE
+	return nullptr;
 }
 
 // query constructor
@@ -275,59 +152,12 @@ SEMVER_API void semver_version_dispose(HSemverVersion version) // Free the alloc
 	delete v;
 }
 
-static void DisposeSemverVersionBlockHeapResources(SemverVersionBlock* block)
-{
 
-	if (block->count != 0) // all empty blocks share the same static block which is not disposed
-	{
-
-		if (block->ownership == SemverVersionBlock::VersionOwnership::OWNS)
-		{
-			for (size_t i = 0; i < block->count; ++i)
-				block->versions[i].deleteHeapResources(); // don't delete the version pointer! The block holds the data
-		}
-
-		::operator delete(block);
-	}
-
-}
 
 SEMVER_API void semver_versions_dispose(HSemverVersions version_array)
 {
-	SemverVersionBlock* version_block = SemverVersionBlock::pointerFromHandle(version_array);
-
-	if (version_block->ownership == SemverVersionBlock::VersionOwnership::REFERENCES)
-	{
-		if (version_block->owner) //we expect this for blocks holding refs only
-		{
-			auto it = sVersionBlockRefs.find(version_block->owner);
-			if (it != sVersionBlockRefs.end()) // does this block have references? 
-			{
-				auto& blockRefs = it->second;
-
-				if (std::erase(blockRefs, version_block) && (blockRefs.size() == 0))
-					sVersionBlockRefs.erase(version_block->owner);
-			}
-
-		}
-	}
-	else // it owns the versions and may have reference lists
-	{
-
-		auto it = sVersionBlockRefs.find(version_block);
-		if (it != sVersionBlockRefs.end()) // does this block have references? 
-		{
-			auto& blockRefs = it->second;
-
-			for (auto blockref : it->second)
-				DisposeSemverVersionBlockHeapResources(blockref);
-
-			sVersionBlockRefs.erase(it); //it no longer valid beyond this
-		}
-	} 
-
-
-	DisposeSemverVersionBlockHeapResources(version_block);
+	semver::SemverVersionBlock* version_block = semver::SemverVersionBlock::pointerFromHandle(version_array);
+	DisposeSemverVersionBlock(version_block);
 
 }
 
@@ -342,22 +172,25 @@ SEMVER_API void semver_query_dispose(HSemverQuery query)
 	delete q;
 }
 
+SEMVER_API void semver_context_dispose(HSemverContext context)
+{
+	// TODO Add context destructor here
+}
+
 
 // version array info
 /////////////////////
 
 SEMVER_API size_t semver_versions_count(HSemverVersions version_array)
 {
-	return SemverVersionBlock::pointerFromHandle(version_array)->count;
+	return semver::SemverVersionBlock::pointerFromHandle(version_array)->count;
 }
 
 SEMVER_API HSemverVersion semver_versions_get_version_at_index(HSemverVersions version_array, size_t index)
 {
-	SemverVersionBlock* version_block = SemverVersionBlock::pointerFromHandle(version_array);
+	semver::SemverVersionBlock* version_block = semver::SemverVersionBlock::pointerFromHandle(version_array);
 
    return reinterpret_cast<HSemverVersion>(version_block->getVersionPtrAt(index));
-
-
 }
 
 // version info
@@ -402,6 +235,12 @@ SEMVER_API void semver_free_string(char* str)
 }
 
 
+SEMVER_API HSemverContext semver_query_get_context(const HSemverQuery query)
+{
+// TODO return context handle
+	return nullptr;
+}
+
 // Query info
 /////////////
 SEMVER_API size_t semver_query_get_range_count(const HSemverQuery query)
@@ -444,6 +283,24 @@ SEMVER_API HSemverVersion semver_bound_get_juncture(const HSemverBound bound)
 {
 	semver::Bound* b = reinterpret_cast<semver::Bound*>(bound);
 	return reinterpret_cast<HSemverVersion>(&b->juncture);
+}
+
+SEMVER_API const char* semver_context_get_name(const HSemverContext context)
+{
+	// TODO get name from context
+	return nullptr;
+}
+
+SEMVER_API HSemverVersions semver_context_get_versions(const HSemverContext context)
+{
+	// TODO get version block for context
+	return semver::SemverVersionBlock::getEmptyBlockHandle();
+}
+
+SEMVER_API HSemverQueries semver_context_get_dependencies(const HSemverContext context)
+{	
+	// TODO return dependenices as a list of queries
+	return nullptr;
 }
 
 
@@ -641,6 +498,21 @@ SEMVER_API SemverParseResult semver_set_juncture(HSemverVersion juncture, uint64
 	return SEMVER_PARSE_SUCCESS;
 }
 
+SEMVER_API void semver_context_set_versions(HSemverContext context, HSemverVersions versions)
+{
+	// TODO
+}
+
+SEMVER_API void semver_context_set_ownership_of_versions(HSemverContext context, BOOL owns_versions)
+{
+	//todo 
+}
+
+SEMVER_API void semver_context_set_dependecies(HSemverContext context, HSemverQueries dependencies)
+{
+	//todo
+}
+
 
 // version comparison
 /////////////////////
@@ -697,7 +569,7 @@ struct StartEndIndex
 
 
 // PRE: block is not empty
-StartEndIndex findASCSortedBlockStartIndex(const semver::Query& q,  const SemverVersionBlock& b)
+StartEndIndex findASCSortedBlockStartIndex(const semver::Query& q,  const semver::SemverVersionBlock& b)
 {
 
 	const semver::Version& minVersion = q.lowBound().juncture;
@@ -760,7 +632,7 @@ StartEndIndex findASCSortedBlockStartIndex(const semver::Query& q,  const Semver
 }
 
 // PRE: block is not empty
-StartEndIndex findDESCSortedBlockStartIndex(const semver::Query& q, const SemverVersionBlock& b)
+StartEndIndex findDESCSortedBlockStartIndex(const semver::Query& q, const semver::SemverVersionBlock& b)
 {
 
 	const semver::Version& minVersion = q.lowBound().juncture;
@@ -824,10 +696,10 @@ StartEndIndex findDESCSortedBlockStartIndex(const semver::Query& q, const Semver
 
 SEMVER_API HSemverVersions semver_query_match_versions(const HSemverQuery query, const HSemverVersions versions)
 {
-	SemverVersionBlock* b = SemverVersionBlock::pointerFromHandle(versions);
+	semver::SemverVersionBlock* b = semver::SemverVersionBlock::pointerFromHandle(versions);
 
 	if (b->count == 0)
-		return SemverVersionBlock::getEmptyBlockHandle();
+		return semver::SemverVersionBlock::getEmptyBlockHandle();
 
 	semver::Query* q = reinterpret_cast<semver::Query*>(query);
 
@@ -839,7 +711,7 @@ SEMVER_API HSemverVersions semver_query_match_versions(const HSemverQuery query,
 		indices = findDESCSortedBlockStartIndex(*q, *b);
 
 	if (indices.startIndex > indices.endIndex)
-		return SemverVersionBlock::getEmptyBlockHandle();
+		return semver::SemverVersionBlock::getEmptyBlockHandle();
 
 
 	std::vector<semver::Version*> matched;
@@ -855,9 +727,9 @@ SEMVER_API HSemverVersions semver_query_match_versions(const HSemverQuery query,
 	size_t matchCount = matched.size();
 
 	if (matchCount == 0)
-		return reinterpret_cast<HSemverVersions>(SemverVersionBlock::getEmptyBlockHandle());
+		return reinterpret_cast<HSemverVersions>(semver::SemverVersionBlock::getEmptyBlockHandle());
 
-	SemverVersionBlock* result = createVersionReferenceBlock(b->owner? b->owner : b, matchCount); // reference blocks don't own reference blocks
+	semver::SemverVersionBlock* result = createVersionReferenceBlock(b->owner? b->owner : b, matchCount); // reference blocks don't own reference blocks
 
 	std::memcpy(result->versionPtrs, matched.data(), sizeof(semver::Version*) * matchCount);
 
@@ -869,7 +741,7 @@ SEMVER_API HSemverVersions semver_query_match_versions(const HSemverQuery query,
 SEMVER_API HSemverVersion semver_query_highest_match(const HSemverQuery query, const HSemverVersions versions)
 {
 	semver::Query* q = reinterpret_cast<semver::Query*>(query);
-	SemverVersionBlock* b = SemverVersionBlock::pointerFromHandle(versions);
+	semver::SemverVersionBlock* b = semver::SemverVersionBlock::pointerFromHandle(versions);
 
 	// consider a solution that sorts versions in a reference block or if the source versions is sorted (may need a flag)
 	semver::Version* vMax = nullptr;
@@ -887,6 +759,18 @@ SEMVER_API HSemverVersion semver_query_highest_match(const HSemverQuery query, c
 
 	return reinterpret_cast<HSemverVersion>(vMax);
 
+}
+
+SEMVER_API HSemverVersions semver_query_match_in_context(const HSemverQuery query)
+{
+	// TODO: Find a query match in the version block associated with the query by context name
+	return nullptr;
+}
+
+SEMVER_API HSemverVersions semver_query_highest_match_in_context(const HSemverQuery query)
+{
+	// TODO: Find the top match only in the context version block associated with the queyr
+	return semver::SemverVersionBlock::getEmptyBlockHandle();
 }
 
 // Query check methods

@@ -48,10 +48,10 @@ extern "C" // for rest of file
 	static const char SEMVER_LOWEST_PRERELEASE[] = "0";
 
 	typedef struct SemverVersionImpl* HSemverVersion; // transparent handle for a version object
-	
+	typedef struct SemverContextImpl* HSemverContext; // transparent handle for a context (an item with versions: often a product, library or resource)
 	typedef struct SemverVersionsImpl* HSemverVersions; // transparent proto handle for a Version block in or a subset or ordered set from that block
 
-
+	typedef struct SemverQueriesImpl* HSemverQueries; // transparent handle for array of queries (typically each with different context and used to form a dependency tree)
 	typedef struct SemverQueryImpl* HSemverQuery; // transparent handle for a version query (a set of 1 or more ranges)
 	typedef struct SemverRangeImpl* HSemverRange; // transparent handle for a range (a query has 1 or more ranges)
 	typedef struct SemverBoundImpl* HSemverBound; // transparent handle for a bound (upper or lower bound in a range)
@@ -150,10 +150,23 @@ extern "C" // for rest of file
 
 	SEMVER_API HSemverVersions semver_versions_create(size_t count);
 
+
+	// context constructors 
+	///////////////////////
+	
+	SEMVER_API HSemverContext semver_context_create(const char* context_name);
+
+
 	// query constructor
 	////////////////////
 
 	SEMVER_API HSemverQuery semver_query_create();
+
+    // query array constructor
+	//////////////////////////
+
+	SEMVER_API HSemverQueries semver_queries_create(size_t count);
+
 
 	// query parser
 	///////////////
@@ -170,9 +183,10 @@ extern "C" // for rest of file
 
 	SEMVER_API void semver_query_dispose(HSemverQuery query);
 
+	SEMVER_API void semver_context_dispose(HSemverContext context);
 
 	// version array info
-	/////////////////////////////////////////////////////////////////
+	/////////////////////
     
 	SEMVER_API size_t semver_versions_count(HSemverVersions version_array);
 	SEMVER_API HSemverVersion semver_versions_get_version_at_index(HSemverVersions version_array, size_t index);
@@ -189,14 +203,15 @@ extern "C" // for rest of file
 	SEMVER_API char* semver_get_version_string(const HSemverVersion version); // \0 terminated string, freed with semver_free_version_string
 
 	// version/query string destructor
-	////////////////////////////
+	//////////////////////////////////
 
 	SEMVER_API void semver_free_string(char* str);
 
 
 	// Query info
 	/////////////
-	
+
+	SEMVER_API HSemverContext semver_query_get_context(const HSemverQuery query); 
 	SEMVER_API size_t semver_query_get_range_count(const HSemverQuery query);
 	SEMVER_API HSemverRange semver_query_get_range_at_index(const HSemverQuery query, size_t index);
 	SEMVER_API HSemverBound semver_range_get_lower_bound(const HSemverRange range);
@@ -206,7 +221,15 @@ extern "C" // for rest of file
 	SEMVER_API HSemverVersion semver_bound_get_juncture(const HSemverBound bound);
 
 
-	// version mutators
+	// Context info
+
+	SEMVER_API const char* semver_context_get_name(const HSemverContext context);
+	SEMVER_API HSemverVersions semver_context_get_versions(const HSemverContext context);
+	SEMVER_API HSemverQueries semver_context_get_dependencies(const HSemverContext context);
+
+
+
+	// Version mutators
 	///////////////////
 
 	SEMVER_API SemverParseResult semver_set_version_major(HSemverVersion version, uint64_t major);
@@ -220,6 +243,9 @@ extern "C" // for rest of file
 
 	// Query mutators
 	/////////////////
+	
+	SEMVER_API void semver_query_set_context_name(const HSemverQuery query, const char* context_name);
+
 
 	SEMVER_API HSemverRange semver_query_add_range(HSemverQuery query);
 
@@ -236,6 +262,13 @@ extern "C" // for rest of file
 	SEMVER_API void semver_bound_set_to_max(HSemverBound bound);
 
 	SEMVER_API SemverParseResult semver_set_juncture(HSemverVersion juncture, uint64_t major, uint64_t minor, uint64_t patch, const char* prerelease); //Junctures don't have build metadata
+
+	// Context mutators
+	///////////////////
+
+	SEMVER_API void semver_context_set_versions(HSemverContext context, HSemverVersions versions);
+	SEMVER_API void semver_context_set_ownership_of_versions(HSemverContext context, BOOL owns_versions); //if versions block is owned the context disposes it
+	SEMVER_API void semver_context_set_dependecies(HSemverContext context, HSemverQueries dependencies);
 
 	// version comparison
 	/////////////////////
@@ -281,7 +314,10 @@ extern "C" // for rest of file
 	SEMVER_API BOOL semver_query_matches_version(const HSemverQuery query, const HSemverVersion version);
 
 	SEMVER_API HSemverVersions semver_query_match_versions(const HSemverQuery query, const HSemverVersions versions);
-	SEMVER_API HSemverVersion semver_query_highest_match(const HSemverQuery query, const HSemverVersions versions);
+	SEMVER_API HSemverVersion semver_query_highest_match(const HSemverQuery query, const HSemverVersions versions); // not a great name
+
+	SEMVER_API HSemverVersions semver_query_match_in_context(const HSemverQuery query);
+	SEMVER_API HSemverVersions semver_query_highest_match_in_context(const HSemverQuery query);
 
 	// Query check methods
 	///////////////////////
