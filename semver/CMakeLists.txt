@@ -10,7 +10,7 @@ add_library(semver SHARED
     semver.cpp
     version.cpp
     pch.cpp
-)
+ "context.cpp" "context.h" "versionblock.h" "versionblock.cpp")
 
 target_include_directories(semver PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/API)
 target_precompile_headers(semver PRIVATE pch.h)
