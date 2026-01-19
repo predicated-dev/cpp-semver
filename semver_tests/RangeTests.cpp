@@ -39,11 +39,11 @@ TEST(SemverRange, ParseGTERange)
 	semver_query_dispose(query);
 }
 
-TEST(SemverRange, ParseGTPReRange)
+TEST(SemverRange, ParseContextGTPReRange)
 {
 	HSemverQuery query = semver_query_create();
 		
-	semver_query_parse(query, ">1.2.3  @alpha"); // ">1.2.3@0")
+	semver_query_parse(query, "\"context\" >1.2.3  @alpha"); // ">1.2.3@0")
 	HSemverVersion version = semver_version_create();
 	
 	semver_version_parse(version, "1.2.3-0"); 
