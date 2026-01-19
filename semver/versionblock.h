@@ -7,7 +7,7 @@
 namespace semver
 {
 
-	struct alignas(alignof(semver::Version)) SemverVersionBlock
+	struct alignas(alignof(semver::Version)) VersionBlock
 	{
 		enum class VersionOwnership : uint32_t // also serve as magic numbers to ensure pointers passed to the API originated from us
 		{
@@ -16,19 +16,19 @@ namespace semver
 		};
 
 
-		static const SemverVersionBlock sEmpty;
+		static const VersionBlock sEmpty;
 
-		static SemverVersionBlock* getEmptyBlockPointer() { return const_cast<SemverVersionBlock*>(&SemverVersionBlock::sEmpty); }
+		static VersionBlock* getEmptyBlockPointer() { return const_cast<VersionBlock*>(&VersionBlock::sEmpty); }
 
 		static HSemverVersions getEmptyBlockHandle() { return reinterpret_cast<HSemverVersions>(getEmptyBlockPointer()); };
 
 
-		static SemverVersionBlock* pointerFromHandle(const HSemverVersions handle)
+		static VersionBlock* pointerFromHandle(const HSemverVersions handle)
 		{
 			if (!handle)
 				return getEmptyBlockPointer();
 
-			auto version_block = reinterpret_cast<SemverVersionBlock*>(handle);
+			auto version_block = reinterpret_cast<VersionBlock*>(handle);
 
 			switch (version_block->ownership)
 			{
@@ -46,7 +46,7 @@ namespace semver
 		SemverOrder order;
 		uint8_t reserved[3]; // explicit padding
 		size_t count;
-		SemverVersionBlock* owner; // must have VersionOwnership::OWNED or be nullptr
+		VersionBlock* owner; // must have VersionOwnership::OWNED or be nullptr
 
 		union
 		{
@@ -70,7 +70,7 @@ namespace semver
 			}
 		}
 
-		SemverVersionBlock(size_t count, SemverVersionBlock* owner = nullptr)
+		VersionBlock(size_t count, VersionBlock* owner = nullptr)
 			: ownership(owner ? VersionOwnership::REFERENCES : VersionOwnership::OWNS),
 			order(SEMVER_ORDER_AS_GIVEN),
 			
@@ -81,24 +81,24 @@ namespace semver
 
 	};
 
-	extern std::unordered_map<SemverVersionBlock*, std::vector<SemverVersionBlock*>> sVersionBlockRefs;
+	extern std::unordered_map<VersionBlock*, std::vector<VersionBlock*>> sVersionBlockRefs;
 
 
-	static_assert(offsetof(SemverVersionBlock, ownership) == 0, "ownership offset mismatch");
-	static_assert(offsetof(SemverVersionBlock, count) == 8, "count offset mismatch");
-	static_assert(offsetof(SemverVersionBlock, owner) == 16, "union offset mismatch");
-	static_assert(offsetof(SemverVersionBlock, versions) == 24, "union offset mismatch");
-	static_assert(sizeof(SemverVersionBlock) == 64, "Unexpected struct size"); // with flexible array it was only 32 (24 + some bogus 8 byte padding). With single entry its 64 (Version is 40 bytes)
+	static_assert(offsetof(VersionBlock, ownership) == 0, "ownership offset mismatch");
+	static_assert(offsetof(VersionBlock, count) == 8, "count offset mismatch");
+	static_assert(offsetof(VersionBlock, owner) == 16, "union offset mismatch");
+	static_assert(offsetof(VersionBlock, versions) == 24, "union offset mismatch");
+	static_assert(sizeof(VersionBlock) == 64, "Unexpected struct size"); // with flexible array it was only 32 (24 + some bogus 8 byte padding). With single entry its 64 (Version is 40 bytes)
 
 	static_assert(std::is_trivially_copyable<semver::Version*>::value, "Version* must be trivially copyable");
-	static_assert(alignof(SemverVersionBlock) >= alignof(semver::Version), "Block alignment must support embedded Version");
-	static_assert(offsetof(SemverVersionBlock, versions) == offsetof(SemverVersionBlock, versionPtrs), "Union layout must be consistent");
+	static_assert(alignof(VersionBlock) >= alignof(semver::Version), "Block alignment must support embedded Version");
+	static_assert(offsetof(VersionBlock, versions) == offsetof(VersionBlock, versionPtrs), "Union layout must be consistent");
 
 
 
-	extern SemverVersionBlock* createVersionBlock(size_t count);
-	extern SemverVersionBlock* createVersionReferenceBlock(SemverVersionBlock* owner, size_t count);
-	extern void DisposeSemverVersionBlockHeapResources(SemverVersionBlock* block);
-	extern void DisposeSemverVersionBlock(SemverVersionBlock* version_block); 
+	extern VersionBlock* createVersionBlock(size_t count);
+	extern VersionBlock* createVersionReferenceBlock(VersionBlock* owner, size_t count);
+	extern void DisposeSemverVersionBlockHeapResources(VersionBlock* block);
+	extern void DisposeSemverVersionBlock(VersionBlock* version_block); 
 
 }

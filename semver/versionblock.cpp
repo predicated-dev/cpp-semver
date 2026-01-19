@@ -6,22 +6,22 @@ namespace semver
 {
 
 	
-	const SemverVersionBlock SemverVersionBlock::sEmpty = { 0, nullptr };
+	const VersionBlock VersionBlock::sEmpty = { 0, nullptr };
 
 
-	std::unordered_map<SemverVersionBlock*, std::vector<SemverVersionBlock*>> sVersionBlockRefs;
+	std::unordered_map<VersionBlock*, std::vector<VersionBlock*>> sVersionBlockRefs;
 
-	SemverVersionBlock* createVersionBlock(size_t count)
+	VersionBlock* createVersionBlock(size_t count)
 	{
 		if (count == 0)
-			return SemverVersionBlock::getEmptyBlockPointer(); // all empty blocks share a single empty block pointer 
+			return VersionBlock::getEmptyBlockPointer(); // all empty blocks share a single empty block pointer 
 
 		size_t versionsSize = sizeof(Version) * count;
-		size_t totalSize = sizeof(SemverVersionBlock) - sizeof(Version) + versionsSize; //one version size already counted
+		size_t totalSize = sizeof(VersionBlock) - sizeof(Version) + versionsSize; //one version size already counted
 
-		auto* block = static_cast<SemverVersionBlock*>(::operator new(totalSize));
+		auto* block = static_cast<VersionBlock*>(::operator new(totalSize));
 
-		new (block) SemverVersionBlock{ count, nullptr }; // use memory at start of block
+		new (block) VersionBlock{ count, nullptr }; // use memory at start of block
 		memset(&block->versions, 0, versionsSize); // Versions with all 0s
 
 		for (size_t i = 0; i < block->count; ++i)
@@ -30,19 +30,19 @@ namespace semver
 		return block;
 	}
 
-	SemverVersionBlock* createVersionReferenceBlock(SemverVersionBlock* owner, size_t count)
+	VersionBlock* createVersionReferenceBlock(VersionBlock* owner, size_t count)
 	{
 		if (count == 0)
-			return SemverVersionBlock::getEmptyBlockPointer(); // all empty blocks share a single empty block pointer 
+			return VersionBlock::getEmptyBlockPointer(); // all empty blocks share a single empty block pointer 
 
 		size_t versionRefsSize = sizeof(Version*) * count;
-		size_t totalSize = sizeof(SemverVersionBlock) - sizeof(Version) + versionRefsSize; //union has since of Version
+		size_t totalSize = sizeof(VersionBlock) - sizeof(Version) + versionRefsSize; //union has since of Version
 
-		if (totalSize < sizeof(SemverVersionBlock))
-			totalSize = sizeof(SemverVersionBlock); // if we have fewer the 5 pointers (Version is 40 bytes) we probably want to allocate at least what sizeof expects
+		if (totalSize < sizeof(VersionBlock))
+			totalSize = sizeof(VersionBlock); // if we have fewer the 5 pointers (Version is 40 bytes) we probably want to allocate at least what sizeof expects
 
-		auto* block = static_cast<SemverVersionBlock*>(::operator new(totalSize));
-		new (block) SemverVersionBlock{ count, owner };
+		auto* block = static_cast<VersionBlock*>(::operator new(totalSize));
+		new (block) VersionBlock{ count, owner };
 
 		std::fill_n(block->versionPtrs, count, nullptr); //all pointers set to null
 
@@ -53,13 +53,13 @@ namespace semver
 
 	}
 
-	void DisposeSemverVersionBlockHeapResources(SemverVersionBlock* block)
+	void DisposeSemverVersionBlockHeapResources(VersionBlock* block)
 	{
 
 		if (block->count != 0) // all empty blocks share the same static block which is not disposed
 		{
 
-			if (block->ownership == SemverVersionBlock::VersionOwnership::OWNS)
+			if (block->ownership == VersionBlock::VersionOwnership::OWNS)
 			{
 				for (size_t i = 0; i < block->count; ++i)
 					block->versions[i].deleteHeapResources(); // don't delete the version pointer! The block holds the data
@@ -70,9 +70,9 @@ namespace semver
 
 	}
 
-	void DisposeSemverVersionBlock(SemverVersionBlock* version_block)
+	void DisposeSemverVersionBlock(VersionBlock* version_block)
 	{
-		if (version_block->ownership == SemverVersionBlock::VersionOwnership::REFERENCES)
+		if (version_block->ownership == VersionBlock::VersionOwnership::REFERENCES)
 		{
 			if (version_block->owner) //we expect this for blocks holding refs only
 			{

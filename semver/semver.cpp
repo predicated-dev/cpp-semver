@@ -82,14 +82,14 @@ static std::vector<std::string_view> splitBuffer(std::string_view buffer, std::s
 SEMVER_API HSemverVersions semver_versions_from_string(const char* versions_str, const char* separator, SemverOrder order)
 {
 	if (!versions_str)
-		return reinterpret_cast<HSemverVersions>(semver::SemverVersionBlock::getEmptyBlockHandle());
+		return reinterpret_cast<HSemverVersions>(semver::VersionBlock::getEmptyBlockHandle());
 
 	std::vector<std::string_view> versionStrs = (!separator || *separator == '\0') ? splitMultistringBuffer(versions_str) : splitBuffer(versions_str, separator);
 
 	size_t count = versionStrs.size();
 
 
-	semver::SemverVersionBlock* block = semver::createVersionBlock(count);
+	semver::VersionBlock* block = semver::createVersionBlock(count);
 
 	for (size_t i = 0; i < count; ++i)
 		block->versions[i].parse(versionStrs[i].data(), versionStrs[i].size());
@@ -113,7 +113,7 @@ SEMVER_API HSemverVersions semver_versions_from_string(const char* versions_str,
 
 SEMVER_API HSemverVersions semver_versions_create(size_t count)
 {
-	semver::SemverVersionBlock* block = semver::createVersionBlock(count);
+	semver::VersionBlock* block = semver::createVersionBlock(count);
 	return reinterpret_cast<HSemverVersions>(block);
 }
 
@@ -156,7 +156,7 @@ SEMVER_API void semver_version_dispose(HSemverVersion version) // Free the alloc
 
 SEMVER_API void semver_versions_dispose(HSemverVersions version_array)
 {
-	semver::SemverVersionBlock* version_block = semver::SemverVersionBlock::pointerFromHandle(version_array);
+	semver::VersionBlock* version_block = semver::VersionBlock::pointerFromHandle(version_array);
 	DisposeSemverVersionBlock(version_block);
 
 }
@@ -183,12 +183,12 @@ SEMVER_API void semver_context_dispose(HSemverContext context)
 
 SEMVER_API size_t semver_versions_count(HSemverVersions version_array)
 {
-	return semver::SemverVersionBlock::pointerFromHandle(version_array)->count;
+	return semver::VersionBlock::pointerFromHandle(version_array)->count;
 }
 
 SEMVER_API HSemverVersion semver_versions_get_version_at_index(HSemverVersions version_array, size_t index)
 {
-	semver::SemverVersionBlock* version_block = semver::SemverVersionBlock::pointerFromHandle(version_array);
+	semver::VersionBlock* version_block = semver::VersionBlock::pointerFromHandle(version_array);
 
    return reinterpret_cast<HSemverVersion>(version_block->getVersionPtrAt(index));
 }
@@ -294,7 +294,7 @@ SEMVER_API const char* semver_context_get_name(const HSemverContext context)
 SEMVER_API HSemverVersions semver_context_get_versions(const HSemverContext context)
 {
 	// TODO get version block for context
-	return semver::SemverVersionBlock::getEmptyBlockHandle();
+	return semver::VersionBlock::getEmptyBlockHandle();
 }
 
 SEMVER_API HSemverQueries semver_context_get_dependencies(const HSemverContext context)
@@ -569,7 +569,7 @@ struct StartEndIndex
 
 
 // PRE: block is not empty
-StartEndIndex findASCSortedBlockStartIndex(const semver::Query& q,  const semver::SemverVersionBlock& b)
+StartEndIndex findASCSortedBlockStartIndex(const semver::Query& q,  const semver::VersionBlock& b)
 {
 
 	const semver::Version& minVersion = q.lowBound().juncture;
@@ -632,7 +632,7 @@ StartEndIndex findASCSortedBlockStartIndex(const semver::Query& q,  const semver
 }
 
 // PRE: block is not empty
-StartEndIndex findDESCSortedBlockStartIndex(const semver::Query& q, const semver::SemverVersionBlock& b)
+StartEndIndex findDESCSortedBlockStartIndex(const semver::Query& q, const semver::VersionBlock& b)
 {
 
 	const semver::Version& minVersion = q.lowBound().juncture;
@@ -696,10 +696,10 @@ StartEndIndex findDESCSortedBlockStartIndex(const semver::Query& q, const semver
 
 SEMVER_API HSemverVersions semver_query_match_versions(const HSemverQuery query, const HSemverVersions versions)
 {
-	semver::SemverVersionBlock* b = semver::SemverVersionBlock::pointerFromHandle(versions);
+	semver::VersionBlock* b = semver::VersionBlock::pointerFromHandle(versions);
 
 	if (b->count == 0)
-		return semver::SemverVersionBlock::getEmptyBlockHandle();
+		return semver::VersionBlock::getEmptyBlockHandle();
 
 	semver::Query* q = reinterpret_cast<semver::Query*>(query);
 
@@ -711,7 +711,7 @@ SEMVER_API HSemverVersions semver_query_match_versions(const HSemverQuery query,
 		indices = findDESCSortedBlockStartIndex(*q, *b);
 
 	if (indices.startIndex > indices.endIndex)
-		return semver::SemverVersionBlock::getEmptyBlockHandle();
+		return semver::VersionBlock::getEmptyBlockHandle();
 
 
 	std::vector<semver::Version*> matched;
@@ -727,9 +727,9 @@ SEMVER_API HSemverVersions semver_query_match_versions(const HSemverQuery query,
 	size_t matchCount = matched.size();
 
 	if (matchCount == 0)
-		return reinterpret_cast<HSemverVersions>(semver::SemverVersionBlock::getEmptyBlockHandle());
+		return reinterpret_cast<HSemverVersions>(semver::VersionBlock::getEmptyBlockHandle());
 
-	semver::SemverVersionBlock* result = createVersionReferenceBlock(b->owner? b->owner : b, matchCount); // reference blocks don't own reference blocks
+	semver::VersionBlock* result = createVersionReferenceBlock(b->owner? b->owner : b, matchCount); // reference blocks don't own reference blocks
 
 	std::memcpy(result->versionPtrs, matched.data(), sizeof(semver::Version*) * matchCount);
 
@@ -741,7 +741,7 @@ SEMVER_API HSemverVersions semver_query_match_versions(const HSemverQuery query,
 SEMVER_API HSemverVersion semver_query_highest_match(const HSemverQuery query, const HSemverVersions versions)
 {
 	semver::Query* q = reinterpret_cast<semver::Query*>(query);
-	semver::SemverVersionBlock* b = semver::SemverVersionBlock::pointerFromHandle(versions);
+	semver::VersionBlock* b = semver::VersionBlock::pointerFromHandle(versions);
 
 	// consider a solution that sorts versions in a reference block or if the source versions is sorted (may need a flag)
 	semver::Version* vMax = nullptr;
@@ -770,7 +770,7 @@ SEMVER_API HSemverVersions semver_query_match_in_context(const HSemverQuery quer
 SEMVER_API HSemverVersions semver_query_highest_match_in_context(const HSemverQuery query)
 {
 	// TODO: Find the top match only in the context version block associated with the queyr
-	return semver::SemverVersionBlock::getEmptyBlockHandle();
+	return semver::VersionBlock::getEmptyBlockHandle();
 }
 
 // Query check methods
